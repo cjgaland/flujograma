@@ -1,0 +1,20 @@
+{
+  "name": "Flujograma · Diagramas de flujo de procesos",
+  "short_name": "Flujograma",
+  "description": "Dibuja cualquier proceso sanitario como un diagrama de flujo: escribe los pasos y la app lo dibuja con los símbolos normalizados, por calles y subprocesos",
+  "id": "./",
+  "scope": "./",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d1b2a",
+  "theme_color": "#0d1b2a",
+  "lang": "es",
+  "icons": [
+    { "src": "icon-192.png?v=1", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-180.png?v=1", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "categories": ["medical", "productivity", "education"]
+}
