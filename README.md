@@ -9,10 +9,11 @@ Seis pasos:
 3. Los pasos: tipo, quién lo hace y a qué paso sigue. Se puede pegar una lista o una tabla de Excel.
 4. El dibujo, que se revisa y se valida con el equipo.
 5. Puntos críticos, con propuestas de dónde buscarlos y avisos numerados sobre el dibujo.
-6. Imagen (PNG, SVG), PDF y archivo de draw.io para retocarlo (Word y Excel, próximamente).
+6. Imagen (PNG, SVG), PDF, Word, Excel y archivo de draw.io para retocarlo.
 
 - Validador de los errores habituales: sin inicio o sin fin, callejones sin salida, decisiones sin Sí o sin No…
-- **Aprende**, **glosario** y **ejemplos**: los cinco procesos del ejercicio 5 del curso, con sus puntos críticos.
+- **Aprende**, **glosario** y **ejemplos**: la atención en Urgencias (con el marco de procesos y los fallos del AMFE) y los cinco procesos del ejercicio 5 del curso, con sus puntos críticos.
+- «Traer de AMFE»: el proceso, los subprocesos, quién interviene y los fallos prioritarios como puntos críticos.
 - Paquete «flujograma-procesos» para que AMFE y Mapa de Riesgos puedan traer el flujograma.
 
 Los datos se guardan solo en el dispositivo; para trabajar en equipo se comparte la copia de seguridad.

@@ -149,7 +149,7 @@
       con: con ? pid(con) : "", nota: "", ajuste: { fila: "", lado: "" }
     }));
     // Puntos críticos: [num, paso, título, descripción]
-    const puntos = (m.puntos || []).map(([n, paso, titulo, descripcion]) => ({ id: `${id}-c${n}`, num: n, pasoId: pid(paso), titulo, descripcion, fallos: [], origen: "manual", clave: "" }));
+    const puntos = (m.puntos || []).map(([n, paso, titulo, descripcion, fallos]) => ({ id: `${id}-c${n}`, num: n, pasoId: pid(paso), titulo, descripcion, fallos: (fallos || []).map(String), origen: fallos ? "amfe" : "manual", clave: "" }));
     return Object.assign({ id, titulo: "", unidad: "", incluye: "", excluye: "", responsable: "", fecha: "", puntos, exportado: "", descartes: [], vista: { orientacion: "vertical", calles: "actor", subprocesos: true, letra: "normal", numeros: true, marco: false },
       marco: { estrategicos: [], soporte: [] }, validado: "", edicion: "00", anteriorId: "", tipoEdicion: "actual", notas: "", creado: "2026-10-22T00:00:00.000Z", modificado: "2026-10-22T00:00:00.000Z" },
       m.meta, { actores, subprocesos, pasos });
@@ -319,8 +319,66 @@
       [4, 16, "Valor crítico que no se comunica", "El resultado alarmante queda en el sistema y el facultativo no se entera a tiempo."]
     ] });
 
+  // Urgencias: flujograma general del ejercicio 7, subprocesos del ejercicio 6 y avisos del mapa de riesgos del
+  // Documento Final (página 15) con los números de fallo del AMFE de Urgencias.
+  const URGENCIAS = miniFlujo({ clave: "urgencias",
+    meta: { titulo: "Atención integral en Urgencias", proceso: "Atención integral en el Servicio de Urgencias", unidad: "Servicio de Urgencias",
+      objetivo: "Garantizar la atención segura del paciente desde su llegada a Urgencias hasta la decisión sobre su destino (alta, ingreso o UCI), sin pérdidas de información entre profesionales.",
+      inicio: "El paciente llega a Urgencias, por su pie o en ambulancia", fin: "Se decide y se hace efectivo su destino",
+      incluye: "Pacientes adultos atendidos en Urgencias generales", excluye: "Urgencias pediátricas y obstétricas; estancia en planta tras el ingreso",
+      vista: { orientacion: "vertical", calles: "actor", subprocesos: true, letra: "normal", numeros: true, marco: true },
+      marco: { estrategicos: ["Contrato programa", "Control de gestión", "Gestión clínica", "Plan de docencia", "Plan de investigación", "Plan de calidad", "Guías de práctica clínica"], soporte: ["Recursos humanos", "Documentación clínica", "Formación", "Sistemas de información", "Servicio de farmacia", "Servicio de radiodiagnóstico", "Servicio de laboratorio", "Cocina y limpieza", "Suministros"] },
+      notas: "Flujograma general del ejercicio 7 del curso, con los 7 subprocesos del ejercicio 6 y el marco de procesos estratégicos, clave y de soporte del Documento Final. Los avisos llevan los números de fallo del AMFE de Urgencias, como el mapa de riesgos del Documento Final (página 15); en la app AMFE está ese AMFE completo. Simplificado para el ejemplo: la decisión final tiene tres destinos (domicilio, planta y UCI) en lugar de seis, y las pruebas se piden juntas." },
+    actores: ["Celador", "Administrativo", "Enfermería", "TCAE", "Facultativo"],
+    subprocesos: [
+      { nombre: "Recepción y registro administrativo", descripcion: "Registro inicial y verificación de datos del paciente", inicio: "Llegada del paciente al mostrador de admisión", fin: "Derivación al triaje", roles: "Administrativo, celador, paciente, acompañante" },
+      { nombre: "Triaje de enfermería", descripcion: "Evaluación clínica inicial y asignación de prioridad", inicio: "Recepción por enfermería de triaje", fin: "Derivación a sala de espera", roles: "Enfermería, celador" },
+      { nombre: "Estancia en sala de espera", descripcion: "Permanencia del paciente hasta la atención clínica", inicio: "Entrada en sala de espera", fin: "Llamada a consulta médica", roles: "TCAE, celador, paciente" },
+      { nombre: "Valoración médica inicial", descripcion: "Exploración y toma de decisiones clínicas preliminares", inicio: "Entrada a consulta médica", fin: "Solicitud de pruebas diagnósticas", roles: "Facultativo, paciente" },
+      { nombre: "Pruebas diagnósticas y traslado", descripcion: "Realización y retorno de estudios solicitados", inicio: "Salida de la consulta para pruebas", fin: "Regreso a box o área de observación", roles: "Celador, técnico de rayos, enfermería, paciente" },
+      { nombre: "Comunicación de resultados y decisión", descripcion: "Valoración de pruebas y decisión terapéutica", inicio: "Disponibilidad de resultados clínicos", fin: "Decisión de ingreso, alta o derivación", roles: "Facultativo" },
+      { nombre: "Gestión del ingreso", descripcion: "Preparación y formalización del ingreso hospitalario", inicio: "Confirmación del ingreso por el facultativo", fin: "Salida del paciente hacia planta", roles: "Facultativo, enfermería, administrativo, celador" }
+    ],
+    pasos: [
+      [1, "T", "Acude solo", -1, "3", 0],
+      [2, "T", "Llega en ambulancia", -1, "4", 0],
+      [3, "A", "Recepción", 0, "5", 0],
+      [4, "D", "¿Paciente crítico?", 0, "si:12,no:3", 0],
+      [5, "A", "Registro de datos", 1, "6", 0],
+      [6, "A", "Triaje", 2, "7", 1],
+      [7, "A", "Traslado", 0, "8", 1],
+      [8, "D", "¿Prioridad vital?", 2, "si:12,no:9", 1],
+      [9, "D", "¿Consulta libre?", 2, "si:11,no:10", 2],
+      [10, "A", "Sala de espera", 3, "11", 2],
+      [11, "A", "Consulta", 4, "13", 3],
+      [12, "A", "Sala de críticos", 4, "13", 3],
+      [13, "D", "¿Precisa pruebas?", 4, "si:14,no:19", 3],
+      [14, "A", "Extrae analítica y prepara al paciente", 2, "ida:15,16", 4],
+      [15, "X", "Laboratorio", -1, "19", 4],
+      [16, "A", "Traslado a Radiología", 0, "17", 4],
+      [17, "X", "Radiología", -1, "18", 4],
+      [18, "A", "Traslado de vuelta al box", 0, "19", 4],
+      [19, "A", "Valoración de resultados", 4, "20", 5],
+      [20, "D", "¿Precisa ingreso?", 4, "si:21,no:25", 5],
+      [21, "D", "¿Ingreso en UCI?", 4, "si:26,no:22", 6],
+      [22, "A", "Gestiona la cama y el ingreso", 1, "23", 6],
+      [23, "A", "Traslado a planta", 0, "24", 6],
+      [24, "T", "Ingreso hospitalario", -1, "", 6],
+      [25, "T", "Alta a domicilio", -1, "", 5],
+      [26, "T", "Ingreso en UCI", -1, "", 6]
+    ],
+    puntos: [
+      [1, 3, "Datos clínicos o de contacto incompletos en la recepción", "Se omiten alergias o medicación, el sistema no alerta de antecedentes y no hay protocolo para el paciente frágil.", [3, 5, 7]],
+      [2, 6, "Prioridad mal asignada en el triaje", "Clasificación errónea del nivel de prioridad, paciente frágil no detectado, constantes mal registradas o sin pulsera identificativa.", [8, 9, 10, 11]],
+      [3, 7, "Paciente sin pulsera o confusión de camillas en el traslado", "Sin identificación física, el paciente puede ser confundido con otro en pruebas o tratamientos.", [29, 30]],
+      [4, 10, "Espera prolongada sin reevaluación ni supervisión", "El paciente empeora en la sala sin que nadie lo note; los frágiles quedan solos.", [15, 16]],
+      [5, 11, "Valoración médica incompleta", "Medicación habitual no conciliada, resultados sin revisar o mala coordinación con la planta.", [23, 36, 45]],
+      [6, 18, "Confusión de camillas al volver de pruebas", "Al regresar al box, el paciente se identifica a la vista y se confunde con otro.", [29, 30]],
+      [7, 22, "Demora en encontrar cama y familia sin avisar", "El paciente permanece en Urgencias más de lo necesario y la familia no sabe dónde está.", [43, 49]]
+    ] });
+
   const EJEMPLOS = {
-    flujos: [CONSTANTES, ALTA, QUIROFANO, ANALITICA, RADIOGRAFIA],
+    flujos: [CONSTANTES, ALTA, QUIROFANO, ANALITICA, RADIOGRAFIA, URGENCIAS],
     fichas: [
       { t: "Toma de constantes en planta", s: "2 calles · 11 pasos · una decisión y dos documentos. El más sencillo para empezar.", href: "#/flujo/ej-fl-constantes/4" },
       { t: "Alta hospitalaria programada", s: "3 calles · 17 pasos · tres decisiones y dos finales (alta o continúa ingreso).", href: "#/flujo/ej-fl-alta/4" },
@@ -328,7 +386,8 @@
       { t: "Solicitud de analítica urgente", s: "5 calles · 18 pasos · dos vueltas atrás y una señal de alarma.", href: "#/flujo/ej-fl-analitica/4" },
       { t: "Petición de radiografía simple", s: "5 calles · 21 pasos · 3 subprocesos, cuatro decisiones, una vuelta atrás y dos finales.", href: "#/flujo/ej-fl-radiografia/4" }
     ],
-    proximos: ["Atención integral en el Servicio de Urgencias"]
+    urgencias: { t: "Atención integral en el Servicio de Urgencias", s: "El proceso general del curso: dos entradas, 5 calles, 7 subprocesos, Laboratorio y Radiología como procesos externos, tres destinos y el marco de procesos estratégicos, clave y de soporte. Los avisos llevan los números de fallo del AMFE de Urgencias, como el mapa de riesgos del Documento Final.", href: "#/flujo/ej-fl-urgencias/5" },
+    proximos: []
   };
 
   const API = { TEMAS, GLOSARIO, EJEMPLOS };

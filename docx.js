@@ -1,5 +1,5 @@
 // ============================================================
-//  docx.js — Documentos Word (.docx) reales sin dependencias · Flujograma (copiado de AMFE; aún sin usar, llega en la entrega 3)
+//  docx.js — Documentos Word (.docx) reales sin dependencias · Flujograma (copiado de AMFE, con imágenes PNG)
 //  Mismo enfoque que xlsx.js: OOXML escrito a mano y empaquetado en un ZIP
 //  sin compresión (usa Xlsx.zipStore). Convierte la lista de «bloques» que
 //  genera logic.js (documentoInforme, documentoResumen) en un .docx editable.
@@ -8,7 +8,8 @@
 //  Bloques: {t:"portada", titulo, sub, extra:[…]} · {t:"h1"|"h2", texto} ·
 //  {t:"p", texto | runs:[{texto, negrita, cursiva, color}], estilo:"nota"} ·
 //  {t:"lista", items:[texto]} · {t:"salto"} ·
-//  {t:"tabla", cab:[…], filas:[[celda]], anchos:[pesos], fuente:pt, sinCab}
+//  {t:"tabla", cab:[…], filas:[[celda]], anchos:[pesos], fuente:pt, sinCab} ·
+//  {t:"imagen", png: Uint8Array, w, h (píxeles, para la proporción), maxAlto: cm, pie: texto}
 //  Celda: texto o {texto, negrita, centro, fondo:"RRGGBB", color}
 // ============================================================
 (function (raiz) {
@@ -51,7 +52,17 @@
       + b.filas.map(f => filaXml(f, false)).join("") + "</w:tbl>" + parrafo("", { esp: [0, 120] });
   }
 
-  function cuerpo(bloques, ancho) {
+  // Imagen PNG en línea, centrada y ajustada al ancho de la página (sin pasar de maxAlto cm)
+  const EMU_TWIP = 635, EMU_CM = 360000;
+  function imagen(b, ancho, n) {
+    let cx = ancho * EMU_TWIP, cy = Math.round(cx * b.h / b.w);
+    const maxY = (b.maxAlto || 22) * EMU_CM; if (cy > maxY) { cx = Math.round(cx * maxY / cy); cy = maxY; }
+    const id = 100 + n;
+    const dib = `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="Imagen ${n}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="imagen${n}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdImg${n}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+    return parrafo(dib, { centro: true, esp: [60, 60] }) + (b.pie ? parrafo(run({ texto: b.pie, cursiva: true, color: "555555", tam: 9 }), { centro: true }) : "");
+  }
+
+  function cuerpo(bloques, ancho, imagenes = []) {
     return bloques.map(b => {
       switch (b.t) {
         case "portada": return parrafo(run({ texto: b.titulo }), { estilo: "Title" })
@@ -64,6 +75,7 @@
         case "lista": return b.items.map(it => parrafo(run({ texto: "•\t" }) + (typeof it === "string" ? run({ texto: it }) : runs(it)), { sangria: 360 })).join("");
         case "salto": return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
         case "tabla": return tabla(b, ancho);
+        case "imagen": { if (!b.png || !b.w || !b.h) return ""; imagenes.push(b.png); return imagen(b, ancho, imagenes.length); }
         default: return "";
       }
     }).join("");
@@ -87,15 +99,17 @@
   function construirDocx(doc) {
     const enc = new TextEncoder();
     const hz = !!doc.horizontal, w = hz ? A4.h : A4.w, h = hz ? A4.w : A4.h, ancho = w - 2 * A4.m;
-    const ns = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+    const ns = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"';
+    const imagenes = [];
     const sect = `<w:sectPr><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="${w}" w:h="${h}"${hz ? ' w:orient="landscape"' : ""}/><w:pgMar w:top="${A4.m}" w:right="${A4.m}" w:bottom="${A4.m}" w:left="${A4.m}" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr>`;
-    const documento = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${ns}><w:body>${cuerpo(doc.bloques, ancho)}${sect}</w:body></w:document>`;
+    const documento = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${ns}><w:body>${cuerpo(doc.bloques, ancho, imagenes)}${sect}</w:body></w:document>`;
     const campo = c => `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> ${c} </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>`;
     const pie = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:ftr ${ns}><w:p><w:pPr><w:pStyle w:val="Footer"/><w:tabs><w:tab w:val="right" w:pos="${ancho}"/></w:tabs></w:pPr>${run({ texto: doc.pie || doc.titulo || "" })}<w:r><w:tab/></w:r>${run({ texto: "Página " })}${campo("PAGE")}${run({ texto: " de " })}${campo("NUMPAGES")}</w:p></w:ftr>`;
     const tipos = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
 <Default Extension="xml" ContentType="application/xml"/>
+<Default Extension="png" ContentType="image/png"/>
 <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
 <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
 <Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>
@@ -110,6 +124,7 @@
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>
+${imagenes.map((_, i) => `<Relationship Id="rIdImg${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/imagen${i + 1}.png"/>`).join("\n")}
 </Relationships>`;
     const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${esc(doc.titulo || "")}</dc:title><dc:creator>App Flujograma</dc:creator><dc:language>es-ES</dc:language></cp:coreProperties>`;
@@ -120,7 +135,8 @@
       { name: "word/styles.xml", bytes: enc.encode(ESTILOS) },
       { name: "word/footer1.xml", bytes: enc.encode(pie) },
       { name: "word/_rels/document.xml.rels", bytes: enc.encode(docRels) },
-      { name: "docProps/core.xml", bytes: enc.encode(core) }
+      { name: "docProps/core.xml", bytes: enc.encode(core) },
+      ...imagenes.map((png, i) => ({ name: `word/media/imagen${i + 1}.png`, bytes: png }))
     ]);
   }
 

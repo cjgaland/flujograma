@@ -41,6 +41,21 @@
     return `<g class="fl-icono" data-paso="${esc(ic.pasoId)}"><rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${h}" rx="2" fill="#e51400" stroke="#b20000"/><path d="M${r1(x + 12)} ${r1(y + 3)}L${r1(x + 21)} ${r1(y + h - 3)}H${r1(x + 3)}Z" fill="#ffff00" stroke="#b09500" stroke-linejoin="round"/><text x="${r1(x + 12)}" y="${r1(y + h - 6.5)}" text-anchor="middle" font-size="9" font-weight="700" fill="#000">!</text><text x="${r1(x + 26)}" y="${r1(y + h / 2)}" dominant-baseline="central" font-size="11" font-weight="700" fill="#ffff00">${esc(ic.texto)}</text></g>`;
   }
 
+  // Marco del mapa de procesos (Documento Final): estratégicos en rojo arriba, proceso clave en naranja a la izquierda, soporte en amarillo abajo
+  const MARCO_COL = { est: ["#f8cecc", "#b85450"], clave: ["#ffe6cc", "#d79b00"], sop: ["#fff2cc", "#d6b656"] };
+  function marcoSvg(m) {
+    const p = [], caja = (b, [rel, bor], tam, peso, esp) => p.push(`<rect x="${r1(b.x)}" y="${r1(b.y)}" width="${r1(b.w)}" height="${r1(b.h)}" fill="${rel}" stroke="${bor}"/>${textoCaja(b, tam, peso, esp)}`);
+    if (m.estrategicos) { caja(m.estrategicos.barra, MARCO_COL.est, 12, 700, 5); m.estrategicos.cajas.forEach(c => caja(c, MARCO_COL.est, 9.5, 700, 0)); }
+    if (m.soporte) { caja(m.soporte.barra, MARCO_COL.sop, 12, 700, 5); m.soporte.cajas.forEach(c => caja(c, MARCO_COL.sop, 9.5, 700, 0)); }
+    const k = m.clave, cx = k.x + k.w / 2, cy = k.y + k.h / 2;
+    p.push(`<rect x="${r1(k.x)}" y="${r1(k.y)}" width="${k.w}" height="${r1(k.h)}" fill="${MARCO_COL.clave[0]}" stroke="${MARCO_COL.clave[1]}"/><text x="${r1(cx)}" y="${r1(cy)}" transform="rotate(-90 ${r1(cx)} ${r1(cy)})" text-anchor="middle" dominant-baseline="central" font-size="11.5" font-weight="700" letter-spacing="3" fill="${TINTA}">${esc(recorta(k.texto, Math.floor(k.h / 10)))}</text>`);
+    return p.join("");
+  }
+  function textoCaja(b, tam, peso, esp) {
+    const l = partirSimple(String(b.texto).toUpperCase(), Math.max(6, Math.floor(b.w / (tam * 0.68)))).slice(0, 2), y0 = b.y + b.h / 2 - (l.length - 1) * tam * 0.6;
+    return `<text text-anchor="middle" dominant-baseline="central" font-size="${tam}" font-weight="${peso}"${esp ? ` letter-spacing="${esp}"` : ""} fill="${TINTA}">${l.map((x, i) => `<tspan x="${r1(b.x + b.w / 2)}" y="${r1(y0 + i * tam * 1.2)}">${esc(x)}</tspan>`).join("")}</text>`;
+  }
+
   // opc: { marcar: Set de ids (en rojo), sel: id (resaltado), numeros: bool, titulo, accesible: bool, cabecera: texto (barra negra arriba, como el curso) }
   function svg(d, opc = {}) {
     const tam = d.letra === "grande" ? 14 : 12, numeros = opc.numeros !== false;
@@ -50,6 +65,7 @@
     p.push(`<defs><marker id="fl-punta" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${TINTA}"/></marker><marker id="fl-punta-r" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#e00"/></marker></defs>`);
     p.push(`<rect width="${d.ancho}" height="${alto}" fill="#fff"/>`);
     if (CAB) { const t = recorta(opc.cabecera, Math.floor((d.ancho - 40) / 8)), w = Math.min(d.ancho - 24, t.length * 8.4 + 40); p.push(`<rect x="12" y="10" width="${r1(w)}" height="28" rx="5" fill="#000"/><text x="${r1(12 + w / 2)}" y="24" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#fff">${esc(t)}</text><g transform="translate(0 ${CAB})">`); }
+    if (d.marco) p.push(marcoSvg(d.marco));
     // Bandas de subproceso (detrás de todo)
     d.bandas.forEach(b => {
       p.push(`<rect x="${r1(b.x)}" y="${r1(b.y)}" width="${r1(b.w)}" height="${r1(b.h)}" fill="${b.color}" fill-opacity=".07" stroke="${b.color}" stroke-opacity=".45" stroke-dasharray="2 3"/>`);
@@ -132,6 +148,15 @@
     const c = [], celda = x => c.push(x), geo = (x, y, w, h) => `<mxGeometry x="${n2(x)}" y="${n2(y + DY)}" width="${n2(w)}" height="${n2(h)}" as="geometry" />`;
     const ids = new Map(); let k = 0; const nid = pre => `${pre}-${++k}`;
     if (opc.titulo) celda(`<mxCell id="titulo" value="${xa(opc.titulo)}" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontStyle=1;fontSize=13;fontColor=#FFFFFF;fillColor=#000000;" vertex="1" parent="1"><mxGeometry x="12" y="10" width="${n2(Math.min(d.ancho - 24, String(opc.titulo).length * 8.4 + 40))}" height="30" as="geometry" /></mxCell>`);
+    // Marco del mapa de procesos
+    if (d.marco) {
+      const m = d.marco, est = ([rel, bor], tam, extra = "") => `rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=${tam};fillColor=${rel};strokeColor=${bor};${extra}`;
+      [[m.estrategicos, MARCO_COL.est], [m.soporte, MARCO_COL.sop]].forEach(([g, col]) => { if (!g) return;
+        celda(`<mxCell id="${nid("marco")}" value="${xa(g.barra.texto.split("").join(" "))}" style="${est(col, 12)}" vertex="1" parent="1">${geo(g.barra.x, g.barra.y, g.barra.w, g.barra.h)}</mxCell>`);
+        g.cajas.forEach(c => celda(`<mxCell id="${nid("marco")}" value="${xa(String(c.texto).toUpperCase())}" style="${est(col, 10)}" vertex="1" parent="1">${geo(c.x, c.y, c.w, c.h)}</mxCell>`)); });
+      const k = m.clave;
+      celda(`<mxCell id="${nid("marco")}" value="${xa(k.texto)}" style="${est(MARCO_COL.clave, 11, "rotation=-90;")}" vertex="1" parent="1">${geo(k.x + k.w / 2 - k.h / 2, k.y + k.h / 2 - k.w / 2, k.h, k.w)}</mxCell>`);
+    }
     // Bandas de subproceso (detrás)
     d.bandas.forEach(b => {
       celda(`<mxCell id="${nid("banda")}" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=${b.color};opacity=8;strokeColor=${b.color};dashed=1;dashPattern=2 3;" vertex="1" parent="1">${geo(b.x, b.y, b.w, b.h)}</mxCell>`);

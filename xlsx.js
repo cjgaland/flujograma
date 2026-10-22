@@ -1,5 +1,5 @@
 // ============================================================
-//  xlsx.js — Excel (.xlsx) real sin dependencias · Flujograma (copiado de AMFE; aún sin usar, llega en la entrega 3)
+//  xlsx.js — Excel (.xlsx) real sin dependencias · Flujograma (copiado de AMFE)
 //  Copiado de Auditorías (que lo copió de Indicadores) (skill app-xlsx-export: ZIP STORE + OOXML a mano).
 //  window.Xlsx en navegador y module.exports en Node (tests).
 // ============================================================

@@ -15,8 +15,16 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.02";
+  const APP_VERSION = "2026.03";
   const NOVEDADES = [
+    { version: "2026.03", fecha: "Octubre 2026", titulo: "Word, Excel, «Traer de AMFE» y el ejemplo de Urgencias", cambios: [
+      "Documento del proceso en Word editable: control del documento, descripción, actores, subprocesos, el flujograma como imagen, la leyenda de símbolos, la tabla de pasos y los puntos críticos.",
+      "Libro de Excel con los pasos, los puntos críticos (sus columnas se pueden pegar tal cual en el paso 4 de AMFE), los subprocesos y los actores.",
+      "«Traer de AMFE» en el paso 1: trae el proceso, los subprocesos y sus roles como calles, y si quieres un borrador de los pasos y un punto crítico por cada fallo prioritario. Funciona en el mismo navegador o con la copia de seguridad de AMFE.",
+      "Al escribir los números de fallo del AMFE en un punto crítico, la app dice qué fallo es cada uno.",
+      "Marco del mapa de procesos, como en el Documento Final: procesos estratégicos arriba, proceso clave a la izquierda y procesos de soporte abajo. Sale en el dibujo, en la imagen, en el PDF, en Word y en draw.io.",
+      "Control del documento (elaborado, revisado, aprobado e histórico de revisiones) en el paso 6.",
+      "Nuevo ejemplo: atención integral en el Servicio de Urgencias, con sus 7 subprocesos, el marco de procesos y los avisos con los números de fallo del AMFE, como el mapa de riesgos del curso."] },
     { version: "2026.02", fecha: "Octubre 2026", titulo: "Puntos críticos y exportar: imagen, PDF y draw.io", cambios: [
       "Nuevo paso 5, Puntos críticos: se marcan sobre el dibujo, numerados, con un aviso rojo y amarillo como en el mapa de riesgos del curso. Cada uno con su título, su descripción y los números de fallo del AMFE con los que se relaciona.",
       "La app propone dónde buscarlos: los traspasos entre calles, las decisiones y los pasos de identificación, traslado, registro, comunicación, medicación, muestras y esperas. Cada propuesta se acepta o se descarta.",
@@ -35,7 +43,7 @@
       "Validador: avisa si falta el inicio o el fin, de los callejones sin salida, de las decisiones sin Sí o sin No y de otros errores habituales.",
       "Ejemplos del curso (toma de constantes y petición de radiografía), Aprende (5 temas), glosario y copia de seguridad."] }
   ];
-  const ENTREGA = 2;   // pasos ya construidos (ver L.PASOS[].entrega)
+  const ENTREGA = 3;   // pasos ya construidos (ver L.PASOS[].entrega)
 
   // ---------- Utilidades ----------
   const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -271,7 +279,28 @@
           ${campo(f, "fecha", "Fecha", { opt: true, ph: "p. ej. Octubre 2026" })}
         </div>
       </div>
+      ${amfeHtml(f)}
       <div data-zona="avisos">${avisosGenerales(f, 1)}</div>`;
+  }
+  // «Traer de AMFE»: lee el paquete «amfe-fallos» de este navegador o de la copia .json de AMFE
+  let amfesLeidos = null, amfeElegido = "", opcAmfe = { proceso: true, actores: true, esqueleto: true, puntos: true };
+  function amfeHtml(f) {
+    const ya = f.amfe && f.amfe.id ? `<p class="field-sub">Traído del AMFE «${esc(f.amfe.titulo || "sin nombre")}» el ${esc(fmtFecha(f.amfe.traido))} (${plural(f.amfe.fallos.length, "fallo", "fallos")}). Si el AMFE cambia, vuelve a traerlo.</p>` : "";
+    if (!amfesLeidos) return `<div class="card amfe-card no-print"><h2 class="sub-h">¿Ya tienes un AMFE de este proceso?</h2>
+      <p class="field-sub">Trae de la app <b>AMFE</b> el proceso, sus subprocesos y quién interviene, y si quieres un borrador de los pasos y un punto crítico por cada fallo prioritario.</p>${ya}
+      <div class="toolbar"><button class="btn" data-act="amfe-buscar">⇩ Traer de AMFE</button></div></div>`;
+    const A = amfesLeidos, a = A.find(x => x.id === amfeElegido) || A[0];
+    const chk = (k, t, sub) => `<label class="check"><input type="checkbox" data-amfeopc="${k}"${opcAmfe[k] ? " checked" : ""}${sub ? "" : ""} /> <span>${t}</span></label>`;
+    return `<div class="card amfe-card no-print"><h2 class="sub-h">Traer de AMFE</h2>
+      ${selector("AMFE", 'data-amfesel="1"', a.id, A.map(x => [x.id, `${x.titulo || x.proceso || "AMFE sin nombre"} · ${plural((x.subprocesos || []).length, "subproceso", "subprocesos")} · ${plural((x.fallos || []).length, "fallo", "fallos")}`]))}
+      <div class="amfe-opc">
+        ${chk("proceso", "El proceso y sus subprocesos (con inicio, fin y roles)")}
+        ${chk("actores", "Los roles de los subprocesos como calles")}
+        ${chk("esqueleto", f.pasos.length ? "Borrador de los pasos (no se hará: este flujograma ya tiene pasos)" : "Un borrador de los pasos: el inicio y el fin de cada subproceso, encadenados")}
+        ${chk("puntos", `Un punto crítico por cada fallo prioritario (${(a.fallos || []).filter(x => x.prioritario === true).length})`)}
+      </div>
+      <div class="toolbar"><button class="btn btn--primary" data-act="amfe-traer">Traer</button><button class="btn" data-act="amfe-cancelar">Cancelar</button></div>
+      <p class="field-sub">Se copia: si después cambias el AMFE, vuelve a traerlo. Nada de lo que ya tienes se borra.</p></div>`;
   }
 
   // ---------- Paso 2 · Actores y subprocesos ----------
@@ -415,13 +444,22 @@
         <div class="lienzo-ops">
           ${f.subprocesos.length ? `<button type="button" class="chip${V.subprocesos ? " active" : ""}" data-act="v-sub">Subprocesos</button>` : ""}
           <button type="button" class="chip${V.calles === "turno" ? " active" : ""}" data-act="v-turno" title="Una calle nueva cada vez que el proceso vuelve a un profesional, como en las soluciones del curso">Calles por turnos</button>
+          <button type="button" class="chip${V.marco ? " active" : ""}" data-act="v-marco" title="Procesos estratégicos, proceso clave y procesos de soporte, como en el Documento Final">Marco de procesos</button>
           <button type="button" class="chip${V.numeros ? " active" : ""}" data-act="v-num">Números</button>
           <button type="button" class="chip${V.letra === "grande" ? " active" : ""}" data-act="v-letra">Letra grande</button>
         </div>
         <div class="zoom-btns"><button type="button" class="icon-mini" data-act="z-menos" aria-label="Reducir">−</button><button type="button" class="btn btn--sm" data-act="z-ajustar">Ajustar</button><button type="button" class="icon-mini" data-act="z-mas" aria-label="Ampliar">+</button></div>
       </div>
       <div class="lienzo" id="lienzo" tabindex="0" aria-label="Flujograma. Usa los botones para ampliar o reducir."><div class="lienzo-in" data-zona="lienzo">${svgActual(f)}</div></div>
-      <div data-zona="panel">${panelHtml(f)}</div>`;
+      <div data-zona="panel">${panelHtml(f)}</div>
+      ${V.marco && pasoActual === 4 ? marcoHtml(f) : ""}`;
+  }
+  // Marco del mapa de procesos (mejora E): una línea por proceso
+  function marcoHtml(f) {
+    const area = (k, t, ph) => `<div class="field"><div class="field-head"><label class="field-label">${t}</label></div><textarea class="txt-in" data-marco="${k}" rows="4" placeholder="${esc(ph)}">${esc(f.marco[k].join("\n"))}</textarea></div>`;
+    return `<div class="card no-print"><h2 class="sub-h">Marco de procesos</h2><p class="field-sub">Un proceso por línea. El proceso clave es el que dibujas.</p>
+      <div class="dos-col">${area("estrategicos", "Procesos estratégicos (arriba)", "p. ej. Contrato programa")}${area("soporte", "Procesos de soporte (abajo)", "p. ej. Sistemas de información")}</div>
+      ${!f.marco.estrategicos.length && !f.marco.soporte.length ? `<div class="toolbar"><button class="btn btn--sm" data-act="marco-sug">Proponer los habituales</button></div>` : ""}</div>`;
   }
   function paso4(f) {
     const err = L.errores(f).length;
@@ -441,7 +479,7 @@
   }
   function svgActual(f) {
     const marcar = new Set(pasoActual === 5 ? [] : L.errores(f).map(a => a.paso).filter(Boolean));
-    return D.svg(L.disponer(f), { marcar, sel: selPaso, numeros: f.vista.numeros, titulo: "Flujograma: " + (nombreFlujo(f) || "sin nombre"), accesible: true });
+    return D.svg(L.dibujar(f), { marcar, sel: selPaso, numeros: f.vista.numeros, titulo: "Flujograma: " + (nombreFlujo(f) || "sin nombre"), accesible: true });
   }
   function panelHtml(f) {
     const p = selPaso && L.pasoDe(f, selPaso);
@@ -522,10 +560,15 @@
       <div class="dos-col">
         ${selector("En el paso", bpc(x, "pasoId"), x.pasoId, [["", "— Elige el paso —"], ...f.pasos.map(q => [q.id, nomPaso(q)])])}
         <div class="field"><div class="field-head"><label class="field-label">Fallos del AMFE</label><span class="field-opt">(opcional)</span>${ayudaBtn("Los números de los fallos del AMFE que corresponden a este punto, separados por comas. Es lo que mostrará el Mapa de Riesgos en el aviso, como «3, 5, 7» en el Documento Final de Urgencias.").btn}</div>
-          <div class="input-wrap"><input class="txt-in" ${bpc(x, "fallos")} value="${esc(x.fallos.join(", "))}" placeholder="p. ej. 3, 5, 7" inputmode="numeric" autocomplete="off" /></div></div>
+          <div class="input-wrap"><input class="txt-in" ${bpc(x, "fallos")} value="${esc(x.fallos.join(", "))}" placeholder="p. ej. 3, 5, 7" inputmode="numeric" autocomplete="off" /></div><div data-zfa="${x.id}">${fallosNombres(f, x)}</div></div>
       </div>
       ${p && pasoActual === 5 ? `<button type="button" class="link-btn no-print" data-act="ver-paso" data-id="${p.id}">Ver en el dibujo</button>` : ""}
     </div>`;
+  }
+  // Qué es cada número de fallo, si el flujograma se trajo de un AMFE
+  function fallosNombres(f, x) {
+    if (!f.amfe || !f.amfe.fallos.length || !x.fallos.length) return "";
+    return `<ul class="fallos-amfe">${x.fallos.map(n => { const y = L.falloAmfe(f, n); return `<li><b>${esc(n)}</b> ${y ? esc(L.corto(y.fallo, 70)) + (y.ipr ? ` <span class="badge">IPR ${y.ipr}</span>` : "") : '<span class="falta">no está en el AMFE traído</span>'}</li>`; }).join("")}</ul>`;
   }
   const avisosPunto = (f, id) => L.avisosPuntos(f).filter(a => a.punto === id).map(avisoHtml).join("");
   function propuestasHtml(f) {
@@ -574,11 +617,24 @@
         <div class="card export-card"><h3 class="sub-h">✎ draw.io (diagrams.net)</h3><p class="field-sub">El dibujo editable, con los mismos estilos que las plantillas del curso: calles, flechas unidas a sus símbolos, Sí y No, subprocesos y avisos de los puntos críticos. Ábrelo en <b>app.diagrams.net</b> (Archivo → Abrir desde → Dispositivo) o en la app de escritorio de draw.io.</p>
           <div class="toolbar"><button class="btn btn--primary" data-act="ex-drawio">⬇ Archivo .drawio</button></div>
           <p class="field-sub">Lo que retoques en draw.io no vuelve a esta app: para seguir editando aquí, guarda la copia de seguridad.</p></div>
-        <div class="card export-card export-card--prox"><h3 class="sub-h">Word y Excel</h3><p class="field-sub">Próximamente: el documento del proceso en Word editable y la tabla de pasos y de puntos críticos en Excel.</p></div>
+        <div class="card export-card"><h3 class="sub-h">📝 Word</h3><p class="field-sub">El documento del proceso, editable: control del documento, descripción, actores, subprocesos, el flujograma, la leyenda, los pasos y los puntos críticos.</p>
+          <div class="toolbar"><button class="btn btn--primary" data-act="ex-word">⬇ Word</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">📊 Excel</h3><p class="field-sub">Pasos, puntos críticos, subprocesos y actores. Las columnas «Subproceso» y «Error o punto crítico» se pueden copiar y pegar en el paso 4 de AMFE.</p>
+          <div class="toolbar"><button class="btn btn--primary" data-act="ex-excel">⬇ Excel</button></div></div>
       </div>
+      <h2 class="sec-t">Control del documento</h2>
+      ${controlHtml(f)}
       <h2 class="sec-t">Para otras apps</h2>
       ${practica("Las apps <b>AMFE</b> y <b>Mapa de Riesgos</b> podrán traer este flujograma (sus subprocesos, sus pasos y sus puntos críticos) con un botón «Traer de Flujograma», si las usas en este mismo navegador. Desde otro dispositivo, con la copia de seguridad.")}
       <div class="toolbar no-print"><button class="btn" data-act="copia">⬇ Copia de seguridad</button></div>`;
+  }
+
+  // Control del documento (como en el Documento Final): elaborado, revisado, aprobado e histórico de revisiones
+  function controlHtml(f) {
+    const C = f.control, grupo = (k, t) => `<div class="ctl-grupo"><b>${t}</b>${C[k].map((x, i) => `<div class="ctl-fila"><div class="input-wrap"><input class="txt-in" data-cp="${k}" data-i="${i}" data-f="nombre" value="${esc(x.nombre)}" placeholder="Nombre (opcional)" aria-label="${t}: nombre" /></div><div class="input-wrap"><input class="txt-in" data-cp="${k}" data-i="${i}" data-f="cargo" value="${esc(x.cargo)}" placeholder="Cargo" aria-label="${t}: cargo" /></div><button type="button" class="icon-mini no-print" data-act="cp-del" data-k="${k}" data-i="${i}" aria-label="Quitar">✕</button></div>`).join("")}<button type="button" class="link-btn no-print" data-act="cp-add" data-k="${k}">+ Añadir</button></div>`;
+    return `<div class="card">${grupo("elaborado", "Elaborado por")}${grupo("revisado", "Revisado por")}${grupo("aprobado", "Aprobado por")}
+      <div class="ctl-grupo"><b>Histórico de revisiones</b>${C.historial.map((h, i) => `<div class="ctl-fila ctl-fila--h"><div class="input-wrap"><input class="txt-in" data-ch="${i}" data-f="edicion" value="${esc(h.edicion)}" aria-label="Edición" /></div><div class="input-wrap"><input class="txt-in" type="date" data-ch="${i}" data-f="fecha" value="${esc(h.fecha)}" aria-label="Fecha" /></div><div class="input-wrap"><input class="txt-in" data-ch="${i}" data-f="cambio" value="${esc(h.cambio)}" placeholder="Qué cambia" aria-label="Cambio" /></div><button type="button" class="icon-mini no-print" data-act="ch-del" data-i="${i}" aria-label="Quitar">✕</button></div>`).join("")}<button type="button" class="link-btn no-print" data-act="ch-add">+ Añadir revisión</button></div>
+      <p class="field-sub">Sale al principio del documento de Word. Basta con los cargos; los nombres son opcionales.</p></div>`;
   }
 
   const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4, 5: paso5, 6: paso6 };
@@ -630,9 +686,10 @@
     view.innerHTML = `
       <h1 class="page-title">Ejemplos</h1>
       <p class="page-lead">Para ver cómo queda antes de hacerlo tú. Están aparte: puedes tocarlos, pero <b>no se guardan ni se mezclan con tus datos</b>. Si te sirve de punto de partida, pulsa «Copiar a mis datos».</p>
+      <h2 class="sec-t">Ejemplo completo: atención en Urgencias</h2>
+      <div class="ej-grid"><a class="ej-card ej-card--grande" href="${C.EJEMPLOS.urgencias.href}"><b>${esc(C.EJEMPLOS.urgencias.t)}</b><span>${esc(C.EJEMPLOS.urgencias.s)}</span></a></div>
       <h2 class="sec-t">Procesos del ejercicio 5</h2>
       <div class="ej-grid">${C.EJEMPLOS.fichas.map(x => `<a class="ej-card" href="${x.href}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></a>`).join("")}</div>
-      <p class="field-sub">Próximamente: ${esc(L.listaY(C.EJEMPLOS.proximos.map(x => "«" + x + "»")))}.</p>
       ${practica("Los ejemplos reproducen las soluciones del curso. Lo que se ha añadido para que el dibujo no tenga callejones sin salida se explica en la nota de cada uno (paso 1).")}`;
   }
 
@@ -677,24 +734,46 @@
   }
   const tituloDibujo = f => "Proceso " + (f.proceso || f.titulo || "sin nombre");
   function marcarExportado(f) { if (f.exportado !== hoyIso()) { f.exportado = hoyIso(); tocado(f); refrescar(); } }
-  function svgExport(f) { return D.svg(L.disponer(f), { numeros: f.vista.numeros, cabecera: tituloDibujo(f), titulo: tituloDibujo(f) }); }
+  function svgExport(f) { return D.svg(L.dibujar(f), { numeros: f.vista.numeros, cabecera: tituloDibujo(f), titulo: tituloDibujo(f) }); }
+  // SVG → PNG a doble resolución, sin pasar del tamaño máximo de un lienzo en el móvil
+  function pngDe(s, maxPx = 16e6) {
+    return new Promise((ok, mal) => {
+      const im = new Image(), w = Number(/width="(\d+)/.exec(s)[1]), h = Number(/height="(\d+)/.exec(s)[1]), k = Math.min(2, Math.sqrt(maxPx / (w * h)));
+      im.onload = () => {
+        const cv = document.createElement("canvas"); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+        const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(im, 0, 0, cv.width, cv.height);
+        cv.toBlob(b => b ? ok({ blob: b, w, h }) : mal(new Error("png")), "image/png");
+      };
+      im.onerror = () => mal(new Error("svg"));
+      im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s);
+    });
+  }
   function exportarImagen(f, tipo) {
     const s = svgExport(f);
     if (tipo === "svg") { compartirOBajar(new Blob([s], { type: "image/svg+xml" }), nombreArchivo("svg", f), "Imagen SVG descargada."); marcarExportado(f); return; }
-    const im = new Image(), w = Number(/width="(\d+)/.exec(s)[1]), h = Number(/height="(\d+)/.exec(s)[1]);
-    // Doble resolución, sin pasar del tamaño máximo de un lienzo en el móvil
-    const k = Math.min(2, Math.sqrt(16e6 / (w * h)));
-    im.onload = () => {
-      const cv = document.createElement("canvas"); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
-      const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(im, 0, 0, cv.width, cv.height);
-      cv.toBlob(b => { if (!b) { toast("No se ha podido crear la imagen.", 4000); return; } compartirOBajar(b, nombreArchivo("png", f), "Imagen PNG descargada."); marcarExportado(f); }, "image/png");
-    };
-    im.onerror = () => toast("No se ha podido crear la imagen.", 4000);
-    im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s);
+    pngDe(s).then(r => { compartirOBajar(r.blob, nombreArchivo("png", f), "Imagen PNG descargada."); marcarExportado(f); }).catch(() => toast("No se ha podido crear la imagen.", 4000));
+  }
+  async function exportarWord(f) {
+    toast("Preparando el Word…");
+    try {
+      const fecha = new Date().toLocaleDateString("es-ES");
+      const r = await pngDe(D.svg(L.dibujar(f), { numeros: f.vista.numeros }), 12e6);
+      const doc = L.documentoProceso(f, fecha, { png: new Uint8Array(await r.blob.arrayBuffer()), w: r.w, h: r.h, maxAlto: r.w > r.h * 1.15 ? 15 : 22 });
+      const bytes = window.Docx.construirDocx(Object.assign({ pie: doc.titulo + " · Generado con la app Flujograma" }, doc));
+      compartirOBajar(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), nombreArchivo("docx", f), "Word descargado. Ábrelo con Word, Pages o LibreOffice y ajústalo a tu gusto.");
+      marcarExportado(f);
+    } catch (e) { toast("No se ha podido crear el Word.", 4000); }
+  }
+  function exportarExcel(f) {
+    try {
+      const bytes = window.Xlsx.construirLibroXlsx(L.hojasExcel(f, new Date().toLocaleDateString("es-ES")));
+      compartirOBajar(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), nombreArchivo("xlsx", f), "Excel descargado.");
+      marcarExportado(f);
+    } catch (e) { toast("No se ha podido crear el Excel.", 4000); }
   }
   function exportarDrawio(f) {
     try {
-      const x = D.drawio(L.disponer(f), { titulo: tituloDibujo(f), numeros: f.vista.numeros, id: f.id });
+      const x = D.drawio(L.dibujar(f), { titulo: tituloDibujo(f), numeros: f.vista.numeros, id: f.id });
       compartirOBajar(new Blob([x], { type: "application/xml" }), nombreArchivo("drawio", f), "Archivo de draw.io descargado. Ábrelo en app.diagrams.net.");
       marcarExportado(f);
     } catch (e) { toast("No se ha podido crear el archivo de draw.io.", 4000); }
@@ -721,7 +800,7 @@
   }
   function renderInforme(f) {
     const fila = (k, v) => lleno(v) ? `<tr><th>${k}</th><td>${esc(v)}</td></tr>` : "";
-    const d = L.disponer(f), r = L.resumen(f), apaisado = d.ancho > d.alto * 1.1;
+    const d = L.dibujar(f), r = L.resumen(f), apaisado = d.ancho > d.alto * 1.1;
     let est = $("#estilo-pagina"); if (!est) { est = document.createElement("style"); est.id = "estilo-pagina"; document.head.appendChild(est); }
     est.textContent = `@page { size: A4 ${apaisado ? "landscape" : "portrait"}; margin: 12mm; }`;
     const subsConPasos = f.subprocesos.filter(s => f.pasos.some(p => p.subprocesoId === s.id));
@@ -1029,11 +1108,16 @@
     }
     if (t.dataset.pc) {
       const x = buscaEn(f.puntos, t.dataset.pc); if (!x) return;
-      if (k === "fallos") x.fallos = L.numsFallos(t.value); else x[k] = t.value;
+      if (k === "fallos") { x.fallos = L.numsFallos(t.value); $$(`[data-zfa="${x.id}"]`).forEach(el => { el.innerHTML = fallosNombres(f, x); }); } else x[k] = t.value;
       tocado(f);
       if (esSel) repintar(); else refrescar();
       return;
     }
+    if (t.dataset.marco) { f.marco[t.dataset.marco] = t.value.split("\n").map(x => x.trim()).filter(Boolean).slice(0, t.dataset.marco === "soporte" ? 16 : 12); tocado(f); refrescar(); return; }
+    if (t.dataset.cp) { const x = f.control[t.dataset.cp][Number(t.dataset.i)]; if (!x) return; x[k] = t.value; tocado(f); return; }
+    if (t.dataset.ch) { const x = f.control.historial[Number(t.dataset.ch)]; if (!x) return; x[k] = t.value; tocado(f); return; }
+    if (t.dataset.amfesel) { amfeElegido = t.value; repintar(); return; }
+    if (t.dataset.amfeopc) { opcAmfe[t.dataset.amfeopc] = t.checked; return; }
     if (t.dataset.aj) { const p = L.pasoDe(f, t.dataset.aj); if (!p) return; p.ajuste.lado = t.value; if (t.value) p.ajuste.fila = ""; tocado(f); seleccionar(p.id); refrescar(); return; }
     if (t.dataset.sal) {
       const p = L.pasoDe(f, t.dataset.sal); if (!p) return;
@@ -1210,6 +1294,26 @@
     else if (act === "inf-sub") { porSubproceso = !porSubproceso; const y = window.scrollY; renderInforme(actual); window.scrollTo(0, y); }
     else if (act === "v-or" && f) { f.vista.orientacion = b.dataset.v; zoom = null; tocado(f); repintar(); }
     else if (act === "v-sub" && f) { f.vista.subprocesos = !f.vista.subprocesos; tocado(f); repintar(); }
+    else if (act === "v-marco" && f) { f.vista.marco = !f.vista.marco; if (f.vista.marco && !f.marco.estrategicos.length && !f.marco.soporte.length) f.marco = clon(L.MARCO_SUG); tocado(f); repintar(); }
+    else if (act === "marco-sug" && f) { f.marco = clon(L.MARCO_SUG); tocado(f); repintar(); }
+    else if (act === "amfe-buscar" && f) {
+      let l = null; try { l = L.leerAmfe(JSON.parse(leer("amfe-intercambio") || "null")); } catch (er) { /* */ }
+      if (l && l.length) { amfesLeidos = l; amfeElegido = l[0].id; repintar(); }
+      else confirmar("<p>No hay ningún AMFE de la app <b>AMFE</b> en este navegador.</p><p>Si lo tienes en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-amfe").click(), { titulo: "Traer de AMFE", peligro: false });
+    }
+    else if (act === "amfe-cancelar") { amfesLeidos = null; repintar(); }
+    else if (act === "amfe-traer" && f && amfesLeidos) {
+      const a = amfesLeidos.find(x => x.id === amfeElegido) || amfesLeidos[0];
+      const r = L.traerDeAmfe(f, a, opcAmfe, genId); amfesLeidos = null; tocado(f); repintar();
+      const partes = [r.subprocesos && plural(r.subprocesos, "subproceso", "subprocesos"), r.actores && plural(r.actores, "actor", "actores"), r.pasos && plural(r.pasos, "paso", "pasos"), r.puntos && plural(r.puntos, "punto crítico", "puntos críticos")].filter(Boolean);
+      toast(`${partes.length ? "Traído del AMFE: " + L.listaY(partes) + "." : "No había nada nuevo que traer."}${r.esqueletoOmitido ? " El borrador de pasos no se ha hecho porque ya tenías pasos." : ""}`, 5000);
+    }
+    else if (act === "ex-word" && f) exportarWord(f);
+    else if (act === "ex-excel" && f) exportarExcel(f);
+    else if (act === "cp-add" && f) { f.control[b.dataset.k].push({ nombre: "", cargo: "" }); tocado(f); repintar(); }
+    else if (act === "cp-del" && f) { f.control[b.dataset.k].splice(Number(b.dataset.i), 1); tocado(f); repintar(); }
+    else if (act === "ch-add" && f) { const H = f.control.historial, u = H.length ? parseInt(H[H.length - 1].edicion, 10) : -1; H.push({ edicion: String((Number.isFinite(u) ? u : -1) + 1).padStart(2, "0"), fecha: hoyIso(), cambio: "" }); tocado(f); repintar(); }
+    else if (act === "ch-del" && f) { f.control.historial.splice(Number(b.dataset.i), 1); tocado(f); repintar(); }
     else if (act === "v-turno" && f) { f.vista.calles = f.vista.calles === "turno" ? "actor" : "turno"; tocado(f); repintar(); }
     else if (act === "v-num" && f) { f.vista.numeros = !f.vista.numeros; tocado(f); repintar(); }
     else if (act === "v-letra" && f) { f.vista.letra = f.vista.letra === "grande" ? "normal" : "grande"; tocado(f); repintar(); }
@@ -1223,6 +1327,17 @@
     else if (act === "importar") $("#input-importar").click();
   });
   $("#banner-copiar").addEventListener("click", copiarAMisDatos);
+  // Copia de seguridad de la app AMFE (para «Traer de AMFE» desde otro dispositivo)
+  $("#input-amfe").addEventListener("change", e => {
+    const fl = e.target.files && e.target.files[0]; e.target.value = ""; if (!fl) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      let l = null; try { l = L.leerAmfe(JSON.parse(fr.result)); } catch (er) { /* */ }
+      if (!l || !l.length) { toast("Ese archivo no es una copia de la app AMFE (o es de una versión que no se reconoce).", 4500); return; }
+      amfesLeidos = l; amfeElegido = l[0].id; if (actual) repintar();
+    };
+    fr.readAsText(fl);
+  });
   $("#input-importar").addEventListener("change", e => { const fl = e.target.files && e.target.files[0]; if (fl) importar(fl); e.target.value = ""; });
 
   // ---------- Tema ----------

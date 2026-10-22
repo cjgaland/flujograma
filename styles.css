@@ -1429,3 +1429,13 @@ body.modo-reunion table.mini { font-size: 16px; }
 .informe-dib svg { display: block; width: 100%; height: auto; }
 body.ver-informe .informe-dib svg { max-height: 175mm; }
 @media print { .informe-dib { border: 0; padding: 0; overflow: visible; break-inside: avoid; } .informe-dib svg { max-height: 175mm; } }
+
+/* Traer de AMFE, marco, control del documento (entrega 3) */
+.amfe-card .amfe-opc { display: grid; gap: 8px; margin: 6px 0 10px; }
+.fallos-amfe { margin: 4px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--text-2); }
+.fallos-amfe li { margin: 1px 0; }
+.ctl-grupo { display: grid; gap: 6px; margin: 4px 0 14px; }
+.ctl-fila { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.ctl-fila--h { grid-template-columns: 70px 150px minmax(0, 1fr) auto; }
+@media (max-width: 520px) { .ctl-fila, .ctl-fila--h { grid-template-columns: minmax(0, 1fr) auto; } .ctl-fila > .input-wrap:nth-child(2), .ctl-fila--h > .input-wrap:nth-child(3) { grid-column: 1; } }
+.ej-card--grande { grid-column: 1 / -1; }

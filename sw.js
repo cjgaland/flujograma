@@ -4,7 +4,7 @@
 //  Al cambiar cualquier archivo, incrementa CACHE_NAME.
 // ============================================================
 
-const CACHE_NAME = "flujograma-v2";
+const CACHE_NAME = "flujograma-v3";
 
 const ASSETS = [
   "./",
@@ -13,6 +13,8 @@ const ASSETS = [
   "./logic.js",
   "./contenido.js",
   "./dibujo.js",
+  "./xlsx.js",
+  "./docx.js",
   "./app.js",
   "./manifest.json",
   "./icon-192.png",

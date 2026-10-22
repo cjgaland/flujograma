@@ -58,7 +58,7 @@
   function nuevoFlujo(id, fecha) {
     return { id, titulo: "", proceso: "", unidad: "", objetivo: "", inicio: "", fin: "", incluye: "", excluye: "", responsable: "", fecha: "",
       actores: [], subprocesos: [], pasos: [], puntos: [], vista: nuevaVista(), marco: { estrategicos: [], soporte: [] },
-      validado: "", exportado: "", descartes: [], edicion: "00", anteriorId: "", tipoEdicion: "actual", control: nuevoControl(), notas: "", creado: fecha, modificado: fecha };
+      validado: "", exportado: "", descartes: [], amfe: nuevoAmfeRef(), edicion: "00", anteriorId: "", tipoEdicion: "actual", control: nuevoControl(), notas: "", creado: fecha, modificado: fecha };
   }
   const nuevaVista = () => ({ orientacion: "vertical", calles: "actor", subprocesos: true, letra: "normal", numeros: true, marco: false });
   function nuevoActor(id, nombre = "") { return { id, nombre }; }
@@ -67,6 +67,8 @@
   // con: un documento o unos datos «pegados» a una actividad (se dibujan a su lado).
   function nuevoPaso(id, num, tipo = "actividad") { return { id, num, tipo, texto: "", actorId: "", subprocesoId: "", siguientes: [], con: "", nota: "", ajuste: { fila: "", lado: "" } }; }
   const nuevaFlecha = (a, etiqueta = "", estilo = "normal") => ({ a, etiqueta, estilo });
+  // Copia de los fallos del AMFE del que se trajo el proceso (para ver qué es cada número en los puntos críticos)
+  const nuevoAmfeRef = () => ({ id: "", titulo: "", traido: "", fallos: [] });
   function nuevoPunto(id, num) { return { id, num, pasoId: "", titulo: "", descripcion: "", fallos: [], origen: "manual", clave: "" }; }
   function nuevaPersona() { return { nombre: "", cargo: "" }; }
   function nuevoControl() { return { elaborado: [nuevaPersona()], revisado: [nuevaPersona()], aprobado: [nuevaPersona()], historial: [{ edicion: "00", fecha: "", cambio: "Documento inicial" }] }; }
@@ -787,7 +789,7 @@
           subprocesos: f.subprocesos.map((s, i) => ({ id: s.id, orden: i + 1, nombre: s.nombre, descripcion: s.descripcion, inicio: s.inicio, fin: s.fin, roles: s.roles, origen: s.origenApp ? { app: s.origenApp, id: s.origenId } : null })),
           pasos: f.pasos.map(p => ({ id: p.id, num: p.num, tipo: p.tipo, esInicio: esInicio(f, p, ent), esFin: esFin(f, p, ent), texto: p.texto, actorId: p.actorId, actor: nomA(p.actorId), subprocesoId: p.subprocesoId, subproceso: nomS(p.subprocesoId), siguientes: p.siguientes.filter(s => pasoDe(f, s.a)).map(s => ({ a: s.a, etiqueta: s.etiqueta, estilo: s.estilo })), con: p.con || null })),
           puntos: f.puntos.map(x => { const p = pasoDe(f, x.pasoId); return { id: x.id, num: x.num, pasoId: p ? p.id : null, paso: p ? p.num : null, subprocesoId: p ? p.subprocesoId : "", subproceso: p ? nomS(p.subprocesoId) : "", titulo: x.titulo, descripcion: x.descripcion, fallos: (x.fallos || []).map(Number).filter(Number.isFinite) }; }),
-          dibujo: disponer(f)
+          dibujo: dibujar(f)
         };
       })
     };
@@ -796,6 +798,182 @@
   function leerIntercambio(o) {
     if (!o || typeof o !== "object" || o.formato !== FORMATO_INTERCAMBIO || o.version !== VERSION_INTERCAMBIO || !Array.isArray(o.flujos)) return null;
     return o.flujos.filter(x => x && typeof x === "object" && Array.isArray(x.pasos) && Array.isArray(x.puntos));
+  }
+
+  // ---------- Traer de AMFE (paquete «amfe-fallos» v1, ver ECOSISTEMA.md, sección 4) ----------
+  function leerAmfe(o) {
+    const p = o && typeof o === "object" && o.formato ? o : o && o.intercambio;   // el paquete o la copia .json de AMFE
+    if (!p || p.formato !== "amfe-fallos" || p.version !== 1 || !Array.isArray(p.amfes)) return null;
+    return p.amfes.filter(a => a && typeof a === "object" && Array.isArray(a.subprocesos) && Array.isArray(a.fallos));
+  }
+  // «Médico, enfermería, técnico de rayos» → ["Facultativo", "Enfermería", "Técnico de Radiología"]
+  function actoresDeRoles(roles) {
+    const r = [];
+    String(roles || "").split(/,|;|\s+y\s+|\//).map(x => x.trim()).filter(Boolean).forEach(x => {
+      const g = adivinarActor(x + " hace"), nom = g.actor || mayuscula(x);
+      if (!r.some(y => normal(y) === normal(nom))) r.push(nom);
+    });
+    return r;
+  }
+  // Copia del AMFE elegido lo que se pida. opc: { proceso, actores, esqueleto, puntos }. Devuelve lo que ha hecho.
+  function traerDeAmfe(f, a, opc, genId) {
+    const hecho = { subprocesos: 0, actores: 0, pasos: 0, puntos: 0, esqueletoOmitido: false };
+    const txt = v => String(v == null ? "" : v).slice(0, 300);
+    const subs = (a.subprocesos || []).slice().sort((x, y) => (x.orden || 0) - (y.orden || 0));
+    const mapaSub = new Map();
+    if (opc.proceso !== false) {
+      if (!lleno(f.proceso)) f.proceso = txt(a.proceso || a.titulo);
+      if (!lleno(f.unidad)) f.unidad = txt(a.unidad);
+      subs.forEach(x => {
+        let s = f.subprocesos.find(y => (y.origenApp === "amfe" && y.origenId === x.id) || normal(y.nombre) === normal(x.nombre));
+        if (!s) { s = nuevoSubproceso(genId(), colorLibre(f)); Object.assign(s, { nombre: txt(x.nombre), inicio: txt(x.inicio), fin: txt(x.fin), roles: String(x.roles || "").slice(0, 500) }); f.subprocesos.push(s); hecho.subprocesos++; }
+        s.origenApp = "amfe"; s.origenId = String(x.id || "").slice(0, 60);
+        mapaSub.set(x.id, s);
+      });
+    }
+    if (opc.actores !== false) subs.forEach(x => actoresDeRoles(x.roles).forEach(nom => { if (!buscaActor(f, nom)) { f.actores.push(nuevoActor(genId(), nom)); hecho.actores++; } }));
+    if (opc.esqueleto) {
+      if (f.pasos.length) hecho.esqueletoOmitido = true;
+      else {
+        const filas = [{ k: "i", tipo: "terminal", texto: f.inicio || "Inicio", actor: "", subproceso: subs[0] ? subs[0].nombre : "", sig: [] }];
+        subs.forEach((x, i) => {
+          const actor = actoresDeRoles(x.roles)[0] || "";
+          filas.push({ k: "a" + i, tipo: "actividad", texto: lleno(x.inicio) ? x.inicio : x.nombre, actor, subproceso: x.nombre, sig: [] });
+          if (lleno(x.fin)) filas.push({ k: "b" + i, tipo: "actividad", texto: x.fin, actor, subproceso: x.nombre, sig: [] });
+        });
+        filas.push({ k: "f", tipo: "terminal", texto: f.fin || "Fin", actor: "", subproceso: subs.length ? subs[subs.length - 1].nombre : "", sig: [] });
+        filas.forEach((x, i) => { if (filas[i + 1]) x.sig.push({ k: filas[i + 1].k, etiqueta: "" }); });
+        hecho.pasos = incorporarPasos(f, filas, genId).pasos;
+        f.pasos.filter(p => p.tipo === "actividad").forEach(p => { p.nota = "Borrador traído del AMFE (inicio o fin del subproceso): revísalo y completa los pasos de en medio."; });
+      }
+    }
+    const F = (a.fallos || []).filter(x => x && Number.isFinite(Number(x.num)));
+    f.amfe = { id: String(a.id || "").slice(0, 60), titulo: txt(a.titulo || a.proceso), traido: new Date().toISOString().slice(0, 10),
+      fallos: F.map(x => ({ num: Number(x.num), subproceso: String(x.subproceso || "").slice(0, 200), fallo: String(x.fallo || "").slice(0, 500), ipr: Number.isFinite(Number(x.ipr)) && x.ipr != null ? Number(x.ipr) : 0, prioritario: x.prioritario === true })) };
+    if (opc.puntos) F.filter(x => x.prioritario === true).forEach(x => {
+      if (f.puntos.some(y => (y.fallos || []).includes(String(x.num)))) return;
+      const s = mapaSub.get(x.subprocesoId) || f.subprocesos.find(y => normal(y.nombre) === normal(x.subproceso));
+      const p = s ? f.pasos.find(q => q.subprocesoId === s.id && q.tipo !== "terminal") : null;
+      const pt = nuevoPunto(genId(), siguienteNum(f.puntos));
+      Object.assign(pt, { pasoId: p ? p.id : "", titulo: String(x.fallo || "").slice(0, 300), descripcion: String(x.efecto || "").slice(0, 1500), fallos: [String(x.num)], origen: "amfe" });
+      f.puntos.push(pt); hecho.puntos++;
+    });
+    return hecho;
+  }
+  const falloAmfe = (f, n) => (f.amfe && f.amfe.fallos || []).find(x => String(x.num) === String(n)) || null;
+
+  // ---------- Marco de mapa de procesos (mejora E) ----------
+  const MARCO_SUG = {
+    estrategicos: ["Contrato programa", "Control de gestión", "Gestión clínica", "Plan de docencia", "Plan de investigación", "Plan de calidad", "Guías de práctica clínica"],
+    soporte: ["Recursos humanos", "Documentación clínica", "Formación", "Sistemas de información", "Servicio de farmacia", "Servicio de radiodiagnóstico", "Servicio de laboratorio", "Cocina y limpieza", "Suministros"]
+  };
+  // Mueve un dibujo ya colocado (para dejar sitio al marco)
+  function desplazar(d, dx, dy) {
+    const m = o => { o.x += dx; o.y += dy; };
+    [...d.calles, ...d.bandas, ...d.nodos, ...(d.iconos || [])].forEach(m);
+    d.flechas.forEach(e => { e.puntos = e.puntos.map(([x, y]) => [x + dx, y + dy]); if (e.rotulo) m(e.rotulo); });
+    d.uniones.forEach(u => { u.puntos = u.puntos.map(([x, y]) => [x + dx, y + dy]); });
+    return d;
+  }
+  // Añade al dibujo el marco del Documento Final: estratégicos arriba, proceso clave a la izquierda y soporte abajo
+  function conMarco(d, marco, clave) {
+    const E = (marco.estrategicos || []).filter(lleno), S = (marco.soporte || []).filter(lleno);
+    const ML = 46, MT = E.length ? 104 : 46, MB = S.length ? 104 : 20;
+    desplazar(d, ML, MT);
+    const ancho = d.ancho + ML + 12, alto = d.alto + MT + MB, x0 = ML, w = ancho - ML - 10;
+    const fila = (l, y) => l.map((t, i) => ({ texto: t, x: x0 + i * (w / l.length) + 4, y, w: w / l.length - 8, h: 34 }));
+    d.marco = {
+      estrategicos: E.length ? { barra: { x: x0, y: 8, w, h: 28, texto: "PROCESOS ESTRATÉGICOS" }, cajas: fila(E, 46) } : null,
+      clave: { x: 8, y: MT - 6, w: 30, h: d.alto + 6, texto: (clave ? "PROCESO CLAVE · " + clave : "PROCESO CLAVE").toUpperCase() },
+      soporte: S.length ? { barra: { x: x0, y: alto - 36, w, h: 28, texto: "PROCESOS DE SOPORTE" }, cajas: fila(S, alto - 80) } : null
+    };
+    d.ancho = Math.ceil(ancho); d.alto = Math.ceil(alto);
+    return d;
+  }
+  // Dibujo completo según la vista: colocación + marco si se ha pedido
+  function dibujar(f, opc = {}) {
+    const d = disponer(f, opc), V = Object.assign({}, f.vista, opc);
+    return V.marco ? conMarco(d, f.marco, f.proceso) : d;
+  }
+
+  // ---------- Documento Word (lista de bloques; app.js añade la imagen del dibujo) ----------
+  function salidasTexto(f, p) {
+    const S = p.siguientes.map(x => { const q = pasoDe(f, x.a); return q ? (x.etiqueta === "si" ? "Sí → " : x.etiqueta === "no" ? "No → " : "") + q.num : ""; }).filter(Boolean);
+    return S.join(" · ") || (p.tipo === "terminal" ? "Fin" : "—");
+  }
+  function documentoProceso(f, fecha, img) {
+    const nom = f.proceso || f.titulo || "Proceso sin nombre", r = resumen(f), B = [];
+    const fila = (k, v) => lleno(v) ? [{ texto: k, negrita: true }, v] : null;
+    B.push({ t: "portada", titulo: "Flujograma del proceso", sub: nom, extra: [f.unidad, `Edición ${f.edicion || "00"} · ${fecha}`, lleno(f.validado) ? `Validado con el equipo el ${f.validado.split("-").reverse().join("/")}` : ""].filter(lleno) });
+    const C = f.control || nuevoControl(), pers = l => (l || []).filter(x => lleno(x.nombre) || lleno(x.cargo));
+    if ([C.elaborado, C.revisado, C.aprobado].some(l => pers(l).length) || (C.historial || []).some(h => lleno(h.fecha) || lleno(h.cambio) && h.cambio !== "Documento inicial")) {
+      B.push({ t: "h1", texto: "Control del documento" });
+      const filas = [];
+      [["Elaborado por", C.elaborado], ["Revisado por", C.revisado], ["Aprobado por", C.aprobado]].forEach(([k, l]) => pers(l).forEach((x, i) => filas.push([i ? "" : { texto: k, negrita: true }, x.nombre, x.cargo])));
+      if (filas.length) B.push({ t: "tabla", cab: ["", "Nombre", "Cargo"], filas, anchos: [20, 40, 40] });
+      if ((C.historial || []).length) { B.push({ t: "h2", texto: "Histórico de revisiones" }); B.push({ t: "tabla", cab: ["Edición", "Fecha", "Cambio"], filas: C.historial.map(h => [{ texto: h.edicion, centro: true }, h.fecha ? h.fecha.split("-").reverse().join("/") : "", h.cambio]), anchos: [14, 18, 68] }); }
+    }
+    B.push({ t: "h1", texto: "1. Descripción del proceso" });
+    B.push({ t: "tabla", sinCab: true, filas: [fila("Proceso", nom), fila("Unidad o servicio", f.unidad), fila("Objetivo", f.objetivo), fila("Empieza", f.inicio), fila("Termina", f.fin), fila("Qué queda dentro", f.incluye), fila("Qué queda fuera", f.excluye), fila("Responsable", f.responsable), fila("Fecha", f.fecha),
+      [{ texto: "Resumen", negrita: true }, `${plural(r.pasos, "paso", "pasos")} · ${plural(r.actores, "actor", "actores")} · ${plural(r.decisiones, "decisión", "decisiones")} · ${plural(r.traspasos, "traspaso", "traspasos")} entre calles · ${plural(r.puntos, "punto crítico", "puntos críticos")}`]].filter(Boolean), anchos: [25, 75] });
+    B.push({ t: "h1", texto: "2. Actores" });
+    B.push({ t: "p", texto: "Cada actor tiene su calle (columna) en el flujograma. Cuando el proceso pasa de una calle a otra hay un traspaso." });
+    B.push({ t: "lista", items: f.actores.filter(a => lleno(a.nombre)).map(a => `${a.nombre} (${plural(f.pasos.filter(p => p.actorId === a.id).length, "paso", "pasos")})`) });
+    let n = 3;
+    if (f.subprocesos.length) {
+      B.push({ t: "h1", texto: `${n++}. Subprocesos` });
+      B.push({ t: "tabla", cab: ["Id", "Subproceso", "Descripción", "Inicio", "Fin", "Roles implicados"], filas: f.subprocesos.map((s, i) => [{ texto: String(i + 1), centro: true }, { texto: s.nombre, negrita: true }, s.descripcion, s.inicio, s.fin, s.roles]), anchos: [6, 20, 24, 17, 17, 16], fuente: 8.5 });
+    }
+    B.push({ t: "h1", texto: `${n++}. Flujograma` });
+    if (img) B.push({ t: "imagen", png: img.png, w: img.w, h: img.h, maxAlto: img.maxAlto, pie: `Flujograma del proceso «${nom}».` });
+    B.push({ t: "tabla", cab: ["Símbolo", "Forma", "Significado"], filas: ORDEN_TIPOS.map(t => [{ texto: TIPOS[t].nom, negrita: true, fondo: TIPOS[t].relleno.slice(1).toUpperCase() }, TIPOS[t].forma, TIPOS[t].que]), anchos: [20, 25, 55], fuente: 8.5 });
+    B.push({ t: "h1", texto: `${n++}. Pasos` });
+    B.push({ t: "tabla", cab: ["Nº", "Tipo", "Paso", "Quién", ...(f.subprocesos.length ? ["Subproceso"] : []), "Sigue a"], filas: f.pasos.map(p => { const a = actorDe(f, p), sb = subDe(f, p); return [{ texto: String(p.num), centro: true }, TIPOS[p.tipo].corto, { texto: p.texto + (lleno(p.nota) ? "\n" + p.nota : ""), negrita: false }, a ? a.nombre : "", ...(f.subprocesos.length ? [sb ? sb.nombre : ""] : []), salidasTexto(f, p)]; }), anchos: f.subprocesos.length ? [6, 12, 36, 16, 16, 14] : [6, 13, 45, 20, 16], fuente: 8.5 });
+    B.push({ t: "h1", texto: `${n++}. Puntos críticos` });
+    const G = puntosPorSub(f);
+    if (!G.length) B.push({ t: "p", texto: "No se han identificado puntos críticos.", estilo: "nota" });
+    else {
+      B.push({ t: "p", texto: "Pasos del proceso donde puede producirse un error que comprometa la seguridad del paciente. Son el punto de partida del Análisis Modal de Fallos y Efectos (AMFE)." });
+      B.push({ t: "tabla", cab: ["Id", "Subproceso", "Paso", "Error o punto crítico", "Descripción del error o riesgo", "Fallos AMFE"], filas: G.flatMap(g => g.puntos.map(x => { const p = pasoDe(f, x.pasoId); return [{ texto: String(x.num), centro: true }, g.sub ? g.sub.nombre : "", p ? `${p.num}. ${p.texto}` : "", { texto: x.titulo, negrita: true }, x.descripcion, { texto: (x.fallos || []).join(", "), centro: true }]; })), anchos: [5, 15, 18, 22, 30, 10], fuente: 8.5 });
+    }
+    if (lleno(f.notas)) B.push({ t: "p", texto: f.notas, estilo: "nota" });
+    B.push({ t: "p", texto: `Documento generado con la app Flujograma el ${fecha}. Herramienta docente y de apoyo: no sustituye la validación del proceso por el equipo.`, estilo: "nota" });
+    return { titulo: "Flujograma · " + nom, bloques: B, horizontal: !!(img && img.w > img.h * 1.15) };
+  }
+
+  // ---------- Excel ----------
+  const ESTILOS_XLSX = {
+    titulo: { negrita: true, tamano: 14, colorTexto: "FFFFFF", colorFondo: "3730A3", borde: false },
+    sub: { cursiva: true, colorTexto: "444444", borde: false },
+    cab: { negrita: true, colorTexto: "FFFFFF", colorFondo: "0D1B2A", alineacion: "center", ajustarTexto: true },
+    celda: { ajustarTexto: true, vertical: "top" },
+    negrita: { negrita: true, ajustarTexto: true, vertical: "top" },
+    centro: { alineacion: "center", vertical: "top", ajustarTexto: true },
+    t_terminal: { vertical: "top", colorFondo: "D5E8D4" }, t_actividad: { vertical: "top", colorFondo: "FFF2CC" }, t_decision: { vertical: "top", colorFondo: "FFE6CC" },
+    t_datos: { vertical: "top", colorFondo: "E1D5E7" }, t_documento: { vertical: "top", colorFondo: "DAE8FC" }, t_externo: { vertical: "top", colorFondo: "F8CECC" },
+    pc: { negrita: true, alineacion: "center", vertical: "top", colorFondo: "E51400", colorTexto: "FFFF00" }
+  };
+  function hojasExcel(f, fecha) {
+    const T = (texto, estilo = "celda") => ({ texto: texto == null ? "" : String(texto), estilo });
+    const nom = f.proceso || f.titulo || "Flujograma";
+    const cabecera = (titulo, cols) => { const r = [[T(titulo, "titulo")], [T([f.unidad, "Exportado de la app Flujograma · " + fecha].filter(lleno).join(" · "), "sub")], cols.map(x => T(x, "cab"))]; r[0][0].combinar = cols.length; return r; };
+    const h1 = cabecera("Pasos · " + nom, ["Nº", "Tipo", "Paso", "Quién", "Subproceso", "Sigue a", "Nota"]);
+    f.pasos.forEach(p => { const a = actorDe(f, p), sb = subDe(f, p); h1.push([T(p.num, "centro"), T(TIPOS[p.tipo].corto, "t_" + p.tipo), T(p.texto, "negrita"), T(a ? a.nombre : ""), T(sb ? sb.nombre : ""), T(salidasTexto(f, p), "centro"), T(p.nota)]); });
+    // Columnas «Subproceso» y «Error o punto crítico»: se pueden pegar tal cual en el paso 4 de AMFE
+    const h2 = cabecera("Puntos críticos · " + nom, ["Id", "Subproceso", "Error o punto crítico", "Descripción", "Paso", "Fallos AMFE"]);
+    puntosPorSub(f).forEach(g => g.puntos.forEach(x => { const p = pasoDe(f, x.pasoId); h2.push([T(x.num, "pc"), T(g.sub ? g.sub.nombre : ""), T(x.titulo, "negrita"), T(x.descripcion), T(p ? `${p.num}. ${p.texto}` : ""), T((x.fallos || []).join(", "), "centro")]); }));
+    const h3 = cabecera("Subprocesos · " + nom, ["Id", "Subproceso", "Descripción", "Inicio", "Fin", "Roles implicados", "Pasos", "Puntos críticos"]);
+    f.subprocesos.forEach((s, i) => h3.push([T(i + 1, "centro"), T(s.nombre, "negrita"), T(s.descripcion), T(s.inicio), T(s.fin), T(s.roles), { numero: f.pasos.filter(p => p.subprocesoId === s.id).length, estilo: "centro" }, { numero: f.puntos.filter(x => { const p = pasoDe(f, x.pasoId); return p && p.subprocesoId === s.id; }).length, estilo: "centro" }]));
+    const h4 = cabecera("Proceso y actores · " + nom, ["Dato", "Valor"]);
+    [["Proceso", nom], ["Unidad", f.unidad], ["Objetivo", f.objetivo], ["Empieza", f.inicio], ["Termina", f.fin], ["Qué queda dentro", f.incluye], ["Qué queda fuera", f.excluye], ["Responsable", f.responsable], ["Validado", f.validado ? f.validado.split("-").reverse().join("/") : ""]].forEach(([k, v]) => h4.push([T(k, "negrita"), T(v)]));
+    h4.push([]); h4.push([T("Actor (calle)", "cab"), T("Pasos", "cab")]);
+    f.actores.forEach(a => h4.push([T(a.nombre, "negrita"), { numero: f.pasos.filter(p => p.actorId === a.id).length, estilo: "centro" }]));
+    return { estilos: ESTILOS_XLSX, hojas: [
+      { nombre: "Pasos", filas: h1, opciones: { anchoColumnas: [6, 13, 44, 22, 24, 14, 34], congelar: { filas: 3, columnas: 0 }, altoFilas: { 1: 24 }, primera: true } },
+      { nombre: "Puntos críticos", filas: h2, opciones: { anchoColumnas: [6, 24, 40, 50, 34, 12], congelar: { filas: 3, columnas: 0 }, altoFilas: { 1: 24 } } },
+      { nombre: "Subprocesos", filas: h3, opciones: { anchoColumnas: [5, 28, 34, 26, 26, 30, 8, 10], congelar: { filas: 3, columnas: 0 } } },
+      { nombre: "Proceso y actores", filas: h4, opciones: { anchoColumnas: [24, 80] } }
+    ] };
   }
 
   // ---------- Saneado por esquema (lo que se carga o se importa nunca se usa sin pasar por aquí) ----------
@@ -812,14 +990,16 @@
     punto: { id: "id", num: "ent", pasoId: "ref", titulo: [300], descripcion: [1500], fallos: { lista: 6, max: 40 }, origen: { en: ["manual", "propuesta", "amfe"] }, clave: [80] },
     vista: { orientacion: { en: ["vertical", "horizontal"] }, calles: { en: ["actor", "turno"] }, subprocesos: "b", letra: { en: ["normal", "grande"] }, numeros: "b", marco: "b" },
     marco: { estrategicos: { lista: 120, max: 12 }, soporte: { lista: 120, max: 16 } },
+    falloAmfe: { num: "ent", subproceso: [200], fallo: [500], ipr: "ent", prioritario: "b" },
+    amfeRef: { id: [60], titulo: [300], traido: [40], fallos: { de: "falloAmfe", max: 500 } },
     persona: { nombre: [200], cargo: [200] },
     revision: { edicion: [10], fecha: [20], cambio: [500] },
     control: { elaborado: { de: "persona", max: 10 }, revisado: { de: "persona", max: 10 }, aprobado: { de: "persona", max: 10 }, historial: { de: "revision", max: 50 } },
     flujo: { id: "id", titulo: [200], proceso: [300], unidad: [200], objetivo: [2000], inicio: [300], fin: [300], incluye: [2000], excluye: [2000], responsable: [300], fecha: [40],
       actores: { de: "actor", max: 30 }, subprocesos: { de: "subproceso", max: 30 }, pasos: { de: "paso", max: 400 }, puntos: { de: "punto", max: 300 },
-      vista: { obj: "vista" }, marco: { obj: "marco" }, validado: [40], exportado: [40], descartes: { lista: 80, max: 400 }, edicion: [4], anteriorId: "ref", tipoEdicion: { en: ["actual", "propuesto"] }, control: { obj: "control" }, notas: [3000], creado: [40], modificado: [40] }
+      vista: { obj: "vista" }, marco: { obj: "marco" }, validado: [40], exportado: [40], descartes: { lista: 80, max: 400 }, amfe: { obj: "amfeRef" }, edicion: [4], anteriorId: "ref", tipoEdicion: { en: ["actual", "propuesto"] }, control: { obj: "control" }, notas: [3000], creado: [40], modificado: [40] }
   };
-  const FABRICA = { actor: id => nuevoActor(id), subproceso: id => nuevoSubproceso(id), flecha: () => nuevaFlecha(""), ajuste: () => ({ fila: "", lado: "" }), paso: id => nuevoPaso(id, 0), punto: id => nuevoPunto(id, 0),
+  const FABRICA = { falloAmfe: () => ({ num: 0, subproceso: "", fallo: "", ipr: 0, prioritario: false }), amfeRef: nuevoAmfeRef, actor: id => nuevoActor(id), subproceso: id => nuevoSubproceso(id), flecha: () => nuevaFlecha(""), ajuste: () => ({ fila: "", lado: "" }), paso: id => nuevoPaso(id, 0), punto: id => nuevoPunto(id, 0),
     vista: nuevaVista, marco: () => ({ estrategicos: [], soporte: [] }), persona: nuevaPersona, revision: () => ({ edicion: "", fecha: "", cambio: "" }), control: () => ({ elaborado: [], revisado: [], aprobado: [], historial: [] }), flujo: id => nuevoFlujo(id, "") };
   function sanear(esq, o, genId) {
     if (!o || typeof o !== "object" || Array.isArray(o)) return null;
@@ -884,6 +1064,8 @@
     progreso, pasoPendiente, siguientePaso, resumen,
     PALABRAS_RIESGO, propuestasPuntos, aceptarPropuesta, avisosPuntos, puntosPorSub, numsFallos,
     FORMATO_INTERCAMBIO, VERSION_INTERCAMBIO, paqueteIntercambio, leerIntercambio,
+    leerAmfe, actoresDeRoles, traerDeAmfe, falloAmfe, MARCO_SUG, desplazar, conMarco, dibujar,
+    salidasTexto, documentoProceso, ESTILOS_XLSX, hojasExcel,
     adivinarActor, leerLista, leerTabla, leerPegado, incorporarPasos,
     insertarDespues, quitarPaso, cambiarTipo, ponerSalida, anadirActores,
     partir, medida, disponer,

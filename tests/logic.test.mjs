@@ -161,6 +161,55 @@ C.EJEMPLOS.flujos.forEach(raw => ["vertical", "horizontal"].forEach(o => {
   t(`${raw.id} ${o}: draw.io sin caracteres sin escapar`, !/value="[^"]*[<>][^"]*"/.test(x));
 }));
 
+// ---------- Entrega 3: Traer de AMFE ----------
+// Paquete real generado por la app AMFE (su ejemplo de Urgencias, con id de usuario para que el paquete lo incluya)
+let LA = null, CA = null;
+try { LA = require("../../../AMFE/Aplicación/logic.js"); CA = require("../../../AMFE/Aplicación/contenido.js"); } catch (e) { /* AMFE no está al lado */ }
+if (LA && CA) {
+  const ua = Object.assign(clon(CA.EJEMPLOS.amfes.find(x => x.id === "ej-amfe-urg")), { id: "amfe-urg" });
+  const paqA = JSON.parse(JSON.stringify(LA.paqueteIntercambio([LA.sanearAmfe(ua, genId, "x")], "2026.05", "x")));
+  const lA = L.leerAmfe(paqA);
+  t("AMFE: se lee el paquete amfe-fallos v1", lA && lA.length === 1);
+  t("AMFE: también desde la copia .json", L.leerAmfe({ app: "amfe", intercambio: paqA }).length === 1);
+  t("AMFE: versión desconocida → null", L.leerAmfe(Object.assign({}, paqA, { version: 9 })) === null);
+  const fA = L.nuevoFlujo(genId(), "x");
+  const rA = L.traerDeAmfe(fA, lA[0], { proceso: true, actores: true, esqueleto: true, puntos: true }, genId);
+  t("AMFE: 7 subprocesos con su origen", rA.subprocesos === 7 && fA.subprocesos.every(s => s.origenApp === "amfe" && s.origenId));
+  t("AMFE: actores normalizados (Médico → Facultativo, técnico de rayos → Técnico de Radiología)", ["Facultativo", "Técnico de Radiología", "Enfermería de triaje", "Celador"].every(n => L.buscaActor(fA, n)) && !L.buscaActor(fA, "Médico"));
+  t("AMFE: esqueleto encadenado y sin errores", rA.pasos > 10 && L.errores(fA).length === 0 && fA.pasos.every(p => p.subprocesoId || p.tipo === "terminal"));
+  const nPrio = lA[0].fallos.filter(x => x.prioritario).length;
+  t("AMFE: un punto crítico por fallo prioritario, en su subproceso", rA.puntos === nPrio && fA.puntos.every(x => { const p = L.pasoDe(fA, x.pasoId), fl = lA[0].fallos.find(y => String(y.num) === x.fallos[0]); return p && L.subDe(fA, p).nombre === fl.subproceso; }));
+  t("AMFE: copia de los fallos para ver qué es cada número", fA.amfe.fallos.length === 49 && L.falloAmfe(fA, 10).fallo.startsWith("Omisión de constantes"));
+  const rB = L.traerDeAmfe(fA, lA[0], { proceso: true, actores: true, esqueleto: true, puntos: true }, genId);
+  t("AMFE: traer dos veces no duplica", rB.subprocesos === 0 && rB.actores === 0 && rB.pasos === 0 && rB.puntos === 0 && rB.esqueletoOmitido);
+  t("AMFE: la copia del AMFE sobrevive al saneado", L.sanearFlujo(clon(fA), genId, "x").amfe.fallos.length === 49);
+} else console.log("(sin la app AMFE al lado: se omiten las pruebas de «Traer de AMFE»)");
+
+// ---------- Entrega 3: marco, Word y Excel ----------
+const fU = L.sanearFlujo(clon(C.EJEMPLOS.flujos.find(x => x.id === "ej-fl-urgencias")), genId, "x");
+const dU = L.dibujar(fU), dU0 = L.disponer(fU);
+t("Urgencias: marco con estratégicos, clave y soporte", dU.marco && dU.marco.estrategicos.cajas.length === 7 && dU.marco.soporte.cajas.length === 9);
+t("Urgencias: el marco no tapa el diagrama", dU.nodos.every(n => n.y > dU.marco.estrategicos.cajas[0].y + 34 && n.y + n.h < dU.marco.soporte.cajas[0].y && n.x > dU.marco.clave.x + dU.marco.clave.w));
+t("Urgencias: el marco desplaza todo por igual", dU.nodos.every((n, i) => Math.abs(n.x - dU0.nodos[i].x - 46) < 0.01) && dU.ancho > dU0.ancho && dU.alto > dU0.alto);
+t("Urgencias: 2 inicios y 3 destinos", fU.pasos.filter(p => L.esInicio(fU, p)).length === 2 && fU.pasos.filter(p => L.esFin(fU, p)).length === 3);
+t("Urgencias: avisos con los números del Documento Final", fU.puntos.find(x => L.pasoDe(fU, x.pasoId).texto === "Triaje").fallos.join() === "8,9,10,11");
+t("Urgencias: SVG con el marco", D.svg(dU).includes("PROCESOS ESTRATÉGICOS"));
+const xU = D.drawio(dU, { titulo: "Urgencias" }), idsU = new Set([...xU.matchAll(/<mxCell id="([^"]+)"/g)].map(m => m[1]));
+t("Urgencias: draw.io con marco y referencias válidas", xU.includes("rotation=-90") && [...xU.matchAll(/(?:parent|source|target)="([^"]+)"/g)].every(m => idsU.has(m[1])));
+const Dx = require("../docx.js"), X = require("../xlsx.js");
+const PNG = Uint8Array.from(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==", "base64"));
+const docU = L.documentoProceso(fU, "22/10/2026", { png: PNG, w: 2000, h: 2400, maxAlto: 22 });
+t("Word: bloques con imagen, subprocesos, pasos y puntos", docU.bloques.some(b => b.t === "imagen") && docU.bloques.filter(b => b.t === "tabla").length >= 5 && !docU.horizontal);
+const bytesU = Dx.construirDocx(Object.assign({ pie: "x" }, docU)), zU = Buffer.from(bytesU).toString("latin1");
+t("Word: el .docx lleva la imagen y su relación", zU.includes("word/media/imagen1.png") && zU.includes('Target="media/imagen1.png"') && zU.includes('<Default Extension="png"'));
+t("Word: sin imagen también funciona", Dx.construirDocx(L.documentoProceso(L.nuevoFlujo(genId(), "x"), "x", null)).length > 1000);
+const hx = L.hojasExcel(fU, "22/10/2026");
+t("Excel: 4 hojas", hx.hojas.map(h => h.nombre).join() === "Pasos,Puntos críticos,Subprocesos,Proceso y actores");
+t("Excel: una fila por paso y por punto", hx.hojas[0].filas.length === 3 + fU.pasos.length && hx.hojas[1].filas.length === 3 + fU.puntos.length);
+t("Excel: cabecera que AMFE reconoce al pegar", ["Subproceso", "Error o punto crítico"].every(c => hx.hojas[1].filas[2].some(x => x.texto === c)));
+t("Excel: se construye", X.construirLibroXlsx(hx).length > 3000);
+if (process.env.GUARDAR) { require("fs").writeFileSync(process.env.GUARDAR + "/prueba.docx", bytesU); require("fs").writeFileSync(process.env.GUARDAR + "/prueba.xlsx", X.construirLibroXlsx(hx)); }
+
 // ---------- Saneado ----------
 const sucio = { flujos: [{ id: "a", pasos: [{ id: "p1", num: 1, tipo: "raro", siguientes: [{ a: "p1" }, { a: "noexiste" }, { a: "p2", etiqueta: "si" }], actorId: "fantasma" }, { id: "p2", num: 1, tipo: "decision" }, { id: "p1", num: 3 }], vista: { subprocesos: false } }, "basura"] };
 const s = L.sanearDatos(sucio, genId, "x");
