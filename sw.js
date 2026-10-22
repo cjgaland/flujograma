@@ -4,7 +4,7 @@
 //  Al cambiar cualquier archivo, incrementa CACHE_NAME.
 // ============================================================
 
-const CACHE_NAME = "flujograma-v4";
+const CACHE_NAME = "flujograma-v5";
 
 const ASSETS = [
   "./",

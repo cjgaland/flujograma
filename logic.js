@@ -15,6 +15,7 @@
   const URL_AUD = "https://cjgaland.github.io/auditorias/";
   const URL_IND = "https://cjgaland.github.io/indicadores-calidad/";
   const URL_TM = "https://cjgaland.github.io/tamano-muestral/";
+  const URL_DAFO = "https://cjgaland.github.io/dafo/";
 
   // ---------- Utilidades ----------
   const lleno = v => v != null && String(v).trim() !== "";
@@ -1086,7 +1087,7 @@
   }
 
   const API = {
-    VERSION_DATOS, URL_AMFE, URL_AUD, URL_IND, URL_TM,
+    VERSION_DATOS, URL_AMFE, URL_AUD, URL_IND, URL_TM, URL_DAFO,
     lleno, sinTildes, num, corto, normal, plural, listaY, mayuscula, minuscula,
     PASOS, TIPOS, ORDEN_TIPOS, COLORES_SUB, COLOR_SUB_HEX, ACTORES_SUG,
     nuevoFlujo, nuevaVista, nuevoActor, nuevoSubproceso, nuevoPaso, nuevaFlecha, nuevoPunto, nuevoControl, siguienteNum, colorLibre,
