@@ -64,7 +64,7 @@ Desktop/Flujograma/
 `bash ~/.claude/skills/app-copia_seguridad/scripts/copia_seguridad.sh --root "/Users/Trabajo/Desktop/Flujograma" --name Flujograma --exclude "Curso*" --exclude "Documentos*" --exclude "*.docx" --exclude .claude`. Hacer una antes de cada publicación.
 
 ## 7. Publicación
-Sin publicar. Solo cuando el autor lo pida: repositorio público `cjgaland/flujograma`, GitHub Pages desde `main` (raíz). Pasos por versión: copia de seguridad; `NOVEDADES` + `APP_VERSION`; mismos `?v=` en index.html; subir `CACHE_NAME` en sw.js; tests; commit en español terminado en `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; push.
+Publicada el 2026-10-22 (v2026.04) con permiso del autor: repositorio público `cjgaland/flujograma`, GitHub Pages desde `main` (raíz) → https://cjgaland.github.io/flujograma/. Cada nueva publicación (push) solo cuando el autor lo pida. Pasos por versión: copia de seguridad; `NOVEDADES` + `APP_VERSION`; mismos `?v=` en index.html; subir `CACHE_NAME` en sw.js; tests; commit en español terminado en `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; push.
 
 ## 8. Estado y pendiente
 - **Entrega 1 (hecha, 2026-10-22, v2026.01)**: esqueleto e identidad (índigo, icono); datos y copias; pasos 1 (proceso), 2 (actores y subprocesos), 3 (tarjetas de pasos, escritura rápida de lista o tabla, validador) y 4 (dibujo SVG automático vertical u horizontal, zoom, panel del paso tocado, validación con el equipo); ejemplos de toma de constantes y radiografía; Aprende temas 1–5; glosario; 123 tests.
@@ -72,5 +72,6 @@ Sin publicar. Solo cuando el autor lo pida: repositorio público `cjgaland/flujo
 - **Entrega 3 (hecha, 2026-10-22, v2026.03)**: Word con el dibujo como imagen (comprobado en LibreOffice), Excel de 4 hojas, «Traer de AMFE» (comprobado con el paquete real de AMFE), nombres de los fallos en los puntos críticos, marco de mapa de procesos (dibujo, imagen, PDF, Word y draw.io), control del documento, ejemplo de Urgencias; 360 tests.
 - **Entrega 4 (hecha, 2026-10-22, v2026.04)**: Ponte a prueba (15 preguntas y 4 ejercicios: símbolos, ordenar, encontrar el error, señalar puntos críticos), 3 minicasos con errores, Aprende tema 7, vista recorrido y modo reunión, ediciones actual/propuesto con comparación y cambios marcados en el dibujo, hoja en blanco; 510 tests. **Todas las entregas del diseño hechas.**
 - Entrega 4: ver el diseño (sección 13).
-- Pendiente: publicar en GitHub (`cjgaland/flujograma`) cuando el autor lo pida; enlazar Flujograma desde las apps hermanas y programar «Traer de Flujograma» en AMFE y en Mapa de Riesgos (sesiones de esos proyectos); manual de usuario si lo pide.
+- Publicada (2026-10-22, v2026.04) en https://cjgaland.github.io/flujograma/.
+- Pendiente: enlazar Flujograma desde las apps hermanas y programar «Traer de Flujograma» en AMFE y en Mapa de Riesgos (sesiones de esos proyectos); manual de usuario si lo pide.
 - Sin probar: el PDF en iPhone real (la vista previa oculta no ejecuta `requestAnimationFrame`).
