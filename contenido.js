@@ -86,7 +86,23 @@
           ${box("practica", "En la práctica", "Después revisa siempre la tabla: la app adivina, pero quien conoce el proceso eres tú.")}` }
       ],
       minicaso: `<p>En un alta hospitalaria, la decisión «¿Documentación completa?» tiene el No hacia «Informar al facultativo»… y ahí se acaba. Es un <b>callejón sin salida</b>: ¿qué pasa después? Lo lógico es que vuelva a la revisión de la documentación.</p>`,
-      practica: { texto: "Crear un flujograma", href: "#/flujo/nuevo" } }
+      practica: { texto: "Crear un flujograma", href: "#/flujo/nuevo" } },
+
+    { n: 6, c: "A", titulo: "Puntos críticos", sub: "Dónde puede fallar el proceso, marcado sobre el dibujo",
+      minuto: [
+        "Un <b>punto crítico</b> es un paso donde el proceso puede fallar y dañar al paciente.",
+        "Se buscan sobre el flujograma ya validado, con el equipo, subproceso a subproceso (ejercicio 8).",
+        "Cada uno lleva un <b>título</b> (lo que puede salir mal) y una <b>descripción</b> del error o del riesgo.",
+        "Son el punto de partida del <b>AMFE</b>: cada punto crítico es un candidato a modo de fallo."],
+      secciones: [
+        { t: "Dónde suele fallar un proceso", h: `<ul><li><b>Traspasos</b> entre profesionales: información que no llega, paciente que nadie vigila.</li><li><b>Decisiones</b>: si se decide mal, todo lo que viene después va por el camino equivocado.</li><li><b>Identificación</b> del paciente y de las muestras (pulsera, etiquetas, verificación).</li><li><b>Registros</b> y <b>comunicación</b>: lo que no se anota o no se dice no existe para el siguiente.</li><li><b>Traslados</b> y <b>esperas</b>: el paciente queda sin vigilancia.</li><li><b>Medicación</b>: prescripción, preparación y administración.</li></ul>
+          ${box("practica", "En la práctica", "En el paso 5 la app te propone estos lugares. Añade los que tengan sentido en tu unidad y descarta el resto: la decisión es del equipo.")}` },
+        { t: "Cómo escribirlos", h: `<p>Como <b>lo que puede salir mal</b>, en una frase concreta: «No colocación de la pulsera identificativa», «Clasificación errónea del nivel de prioridad», «Resultados no comunicados al médico». La consecuencia («error de identidad», «retraso en la atención») va después, en la columna «efecto» del AMFE.</p>
+          ${box("trampa", "Ojo, trampa", "Un punto crítico en un inicio o en un fin casi siempre está mal colocado: el riesgo está en el paso de al lado.")}` },
+        { t: "Del punto crítico al mapa de riesgos", h: `<p>Cuando el AMFE puntúa los fallos, cada punto crítico se puede enlazar con los números de esos fallos. Así el mapa de riesgos dibuja sobre el flujograma un aviso con los números (en Urgencias, «3, 5, 7» sobre Recepción), coloreado según su prioridad.</p>` }
+      ],
+      minicaso: `<p>En la petición de radiografía, el celador recibe el aviso y va a buscar al paciente. Si el paciente <b>no lleva pulsera</b>, no puede comprobar quién es: punto crítico «Paciente no identificado (sin pulsera)», en el paso «¿Paciente verificado?». Su efecto, en el AMFE: prueba al paciente equivocado.</p>`,
+      practica: { texto: "Ver los puntos críticos de la radiografía", href: "#/flujo/ej-fl-radiografia/5" } }
   ];
 
   // ---------- Glosario ----------
@@ -132,7 +148,9 @@
       siguientes: String(sal || "").split(",").filter(Boolean).map(x => { const [a, b] = x.includes(":") ? x.split(":") : ["", x]; return { a: pid(b), etiqueta: a === "si" || a === "no" ? a : "", estilo: a === "ida" ? "idavuelta" : "normal" }; }),
       con: con ? pid(con) : "", nota: "", ajuste: { fila: "", lado: "" }
     }));
-    return Object.assign({ id, titulo: "", unidad: "", incluye: "", excluye: "", responsable: "", fecha: "", puntos: [], vista: { orientacion: "vertical", calles: "actor", subprocesos: true, letra: "normal", numeros: true, marco: false },
+    // Puntos críticos: [num, paso, título, descripción]
+    const puntos = (m.puntos || []).map(([n, paso, titulo, descripcion]) => ({ id: `${id}-c${n}`, num: n, pasoId: pid(paso), titulo, descripcion, fallos: [], origen: "manual", clave: "" }));
+    return Object.assign({ id, titulo: "", unidad: "", incluye: "", excluye: "", responsable: "", fecha: "", puntos, exportado: "", descartes: [], vista: { orientacion: "vertical", calles: "actor", subprocesos: true, letra: "normal", numeros: true, marco: false },
       marco: { estrategicos: [], soporte: [] }, validado: "", edicion: "00", anteriorId: "", tipoEdicion: "actual", notas: "", creado: "2026-10-22T00:00:00.000Z", modificado: "2026-10-22T00:00:00.000Z" },
       m.meta, { actores, subprocesos, pasos });
   }
@@ -155,6 +173,12 @@
       [9, "A", "Informa a facultativo", 1, "10"],
       [10, "A", "Valora información", 0, "11"],
       [11, "T", "Toma de decisión en función de valores", -1, ""]
+    ],
+    puntos: [
+      [1, 2, "Hoja de tratamiento incompleta o ilegible", "No consta qué constantes tomar ni con qué frecuencia, o no se entiende lo escrito."],
+      [2, 4, "No se leen las indicaciones actualizadas", "Enfermería toma las constantes de la pauta anterior porque la hoja ha cambiado y nadie lo ha avisado."],
+      [3, 6, "Valores anómalos que no se reconocen como tales", "Se da por normal un valor alterado (por ejemplo, una saturación baja en un paciente sin oxígeno previo)."],
+      [4, 9, "El aviso al facultativo no llega o llega tarde", "No se localiza al facultativo o el aviso se da de palabra y se olvida; el paciente empeora sin que se actúe."]
     ] });
 
   const RADIOGRAFIA = miniFlujo({ clave: "radiografia",
@@ -190,15 +214,121 @@
       [19, "Doc", "Informe de resultados", 4, "20", 2],
       [20, "T", "Fin", -1, "", 2],
       [21, "T", "Prueba no realizada", -1, "", -1]
+    ],
+    puntos: [
+      [1, 2, "Solicitud sin información clínica suficiente", "El técnico y el radiólogo no saben qué se busca: la proyección o la interpretación pueden no ser las adecuadas."],
+      [2, 9, "Paciente no identificado (sin pulsera)", "El celador no puede comprobar la identidad y la prueba se hace al paciente equivocado."],
+      [3, 12, "Traslado sin información clínica mínima al técnico", "Se omiten datos como el embarazo o la movilidad, que cambian cómo se hace la prueba."],
+      [4, 16, "Imagen no válida que no se repite", "Se da por buena una imagen movida o mal centrada y el diagnóstico se retrasa."],
+      [5, 18, "Resultados que no se comunican al médico", "El informe queda en el sistema sin que nadie lo revise a tiempo."]
+    ] });
+
+  const ALTA = miniFlujo({ clave: "alta",
+    meta: { titulo: "Alta hospitalaria programada", proceso: "Alta hospitalaria programada", unidad: "Hospitalización",
+      objetivo: "Que el paciente salga de la planta con su informe, su medicación y los cuidados que necesita en casa, y que la familia lo sepa a tiempo.",
+      inicio: "El facultativo evalúa la situación clínica del paciente", fin: "El paciente sale de alta o continúa ingresado",
+      notas: "Solución del ejercicio 5 del curso (proceso B). Añadido para el ejemplo: la vuelta de «Informa al facultativo» al informe de alta cuando la documentación no está completa." },
+    actores: ["Facultativo", "Enfermería", "Administrativo"],
+    pasos: [
+      [1, "T", "Facultativo evalúa situación clínica del paciente", -1, "2"],
+      [2, "A", "Evaluación clínica", 0, "4"],
+      [3, "Doc", "Hoja de evolución", 0, "", -1, 2],
+      [4, "D", "¿Alta?", 0, "si:5,no:17"],
+      [5, "A", "Comunica al paciente", 0, "6"],
+      [6, "Doc", "Informe de alta", 0, "7"],
+      [7, "A", "Lectura de indicaciones", 1, "8"],
+      [8, "D", "¿Cuidados domiciliarios?", 1, "si:9,no:11"],
+      [9, "Doc", "Instrucciones específicas", 1, "10"],
+      [10, "A", "Comunica a trabajo social o a la enfermera de enlace", 1, "12"],
+      [11, "Doc", "Informe de cuidados", 1, "12"],
+      [12, "D", "¿Documentación completa?", 1, "si:14,no:13"],
+      [13, "A", "Informa al facultativo", 1, "6"],
+      [14, "A", "Hoja de alta administrativa", 2, "15"],
+      [15, "A", "Entrega informe a la familia", 1, "16"],
+      [16, "T", "Alta a domicilio", -1, ""],
+      [17, "T", "Continúa ingreso", -1, ""]
+    ],
+    puntos: [
+      [1, 6, "Informe de alta sin conciliar la medicación", "El paciente sale con la medicación del ingreso y la de casa duplicadas o con interacciones."],
+      [2, 8, "No se valoran los cuidados que necesita en casa", "Un paciente dependiente se va sin apoyo ni seguimiento de enfermería de enlace."],
+      [3, 12, "Documentación incompleta al alta", "Falta el informe de cuidados o las citas, y el paciente o su centro de salud no saben qué hacer."],
+      [4, 15, "La familia no recibe la información a tiempo", "Nadie viene a recoger al paciente o no entienden las indicaciones."]
+    ] });
+
+  const QUIROFANO = miniFlujo({ clave: "quirofano",
+    meta: { titulo: "Preparación de quirófano", proceso: "Preparación de quirófano para cirugía programada", unidad: "Bloque quirúrgico",
+      objetivo: "Que llegue al quirófano el paciente correcto, preparado, para el procedimiento correcto y con todo el material comprobado.",
+      inicio: "El celador va a buscar al paciente a la planta", fin: "El paciente y el material están listos para la cirugía",
+      notas: "Solución del ejercicio 5 del curso (proceso C). Fíjate en que Enfermería de quirófano interviene dos veces: con «Calles por turnos» sale como en el curso, en dos columnas. Añadido para el ejemplo: el final «Cirugía suspendida o aplazada» para las discrepancias." },
+    actores: ["Celador", "Enfermería de quirófano", "TCAE de quirófano"],
+    pasos: [
+      [1, "T", "Inicio", -1, "2"],
+      [2, "D", "¿Paciente preparado (ayunas, higiene, documentación)?", 0, "si:4,no:3"],
+      [3, "A", "Comunicar discrepancia", 0, "16"],
+      [4, "A", "Traslado a quirófano", 0, "5"],
+      [5, "D", "¿Identidad y procedimiento verificados?", 1, "si:9,no:6"],
+      [6, "A", "Detener el proceso y comunicar discrepancia", 1, "16"],
+      [7, "Doc", "Hoja de evolución", 1, "", -1, 6],
+      [8, "Doc", "Checklist quirúrgico", 1, "", -1, 5],
+      [9, "A", "Retira ropa y colabora con la preparación del paciente y del material", 2, "10"],
+      [10, "A", "Higiene y canalización de vías", 1, "11"],
+      [11, "D", "¿Precisa material específico o prótesis?", 1, "si:14,no:12"],
+      [12, "A", "Verificar bandejas y equipos de anestesia", 1, "14"],
+      [13, "Doc", "Checklist de material completo y en buen estado", 1, "", -1, 12],
+      [14, "A", "Verificar disponibilidad y esterilidad", 1, "15"],
+      [15, "T", "Fin", -1, ""],
+      [16, "T", "Cirugía suspendida o aplazada", -1, ""]
+    ],
+    puntos: [
+      [1, 2, "Paciente sin ayunas o sin la preparación indicada", "Se descubre ya en quirófano y la cirugía se suspende o se hace con riesgo de aspiración."],
+      [2, 5, "Error de identificación, de procedimiento o de lado", "No se hace la verificación con el paciente y el listado quirúrgico, o se hace de memoria."],
+      [3, 12, "Material incompleto o equipos de anestesia sin revisar", "Falta material o un equipo falla en mitad de la intervención."],
+      [4, 14, "Prótesis o material no estéril o no disponible", "Se abre al paciente sin tener la prótesis adecuada o con material de esterilidad dudosa."]
+    ] });
+
+  const ANALITICA = miniFlujo({ clave: "analitica",
+    meta: { titulo: "Solicitud de analítica urgente", proceso: "Solicitud de analítica urgente", unidad: "Urgencias / Laboratorio",
+      objetivo: "Que la muestra correcta llegue al laboratorio en buen estado y que un resultado alarmante llegue a tiempo al facultativo que lo pidió.",
+      inicio: "El facultativo decide pedir una analítica urgente", fin: "El resultado está validado y, si es alarmante, comunicado",
+      notas: "Solución del ejercicio 5 del curso (proceso D). Añadido para el ejemplo: la vuelta de «Corregir errores» a la solicitud y de la notificación de una muestra incorrecta a una nueva extracción." },
+    actores: ["Facultativo", "Enfermería", "Celador", "Técnico de Laboratorio", "Facultativo analista"],
+    pasos: [
+      [1, "T", "Inicio", -1, "2"],
+      [2, "A", "Solicitud de analítica urgente", 0, "4"],
+      [3, "Doc", "Documento de solicitud", 0, "", -1, 2],
+      [4, "D", "¿Correctamente cumplimentado?", 0, "si:6,no:5"],
+      [5, "A", "Corregir errores", 0, "2"],
+      [6, "A", "Imprime etiquetas", 1, "8"],
+      [7, "Doc", "Petición con códigos", 1, "", -1, 6],
+      [8, "A", "Realiza la extracción", 1, "9"],
+      [9, "A", "Transporte de muestras", 2, "10"],
+      [10, "A", "Recepción y verificación de la muestra", 3, "11"],
+      [11, "D", "¿Muestra correcta?", 3, "si:13,no:12"],
+      [12, "A", "Notificación", 3, "8"],
+      [13, "A", "Inicio del proceso de análisis", 3, "14"],
+      [14, "Doc", "Informe de resultados", 4, "15"],
+      [15, "A", "Validación de resultados", 4, "16"],
+      [16, "D", "¿Señal de alarma?", 4, "si:17,no:18"],
+      [17, "A", "Informa al facultativo peticionario", 4, "18"],
+      [18, "T", "Fin", -1, ""]
+    ],
+    puntos: [
+      [1, 6, "Etiquetas de otro paciente", "Se imprimen o se cogen las etiquetas equivocadas y la muestra queda a nombre de otra persona."],
+      [2, 8, "Muestra mal identificada en la extracción", "Se etiqueta lejos de la cama del paciente o después de extraer varias muestras."],
+      [3, 9, "Retraso o deterioro en el transporte", "La muestra espera en un mostrador o se transporta sin las condiciones que necesita."],
+      [4, 16, "Valor crítico que no se comunica", "El resultado alarmante queda en el sistema y el facultativo no se entera a tiempo."]
     ] });
 
   const EJEMPLOS = {
-    flujos: [CONSTANTES, RADIOGRAFIA],
+    flujos: [CONSTANTES, ALTA, QUIROFANO, ANALITICA, RADIOGRAFIA],
     fichas: [
       { t: "Toma de constantes en planta", s: "2 calles · 11 pasos · una decisión y dos documentos. El más sencillo para empezar.", href: "#/flujo/ej-fl-constantes/4" },
+      { t: "Alta hospitalaria programada", s: "3 calles · 17 pasos · tres decisiones y dos finales (alta o continúa ingreso).", href: "#/flujo/ej-fl-alta/4" },
+      { t: "Preparación de quirófano", s: "3 calles · 16 pasos · Enfermería interviene dos veces: prueba «Calles por turnos».", href: "#/flujo/ej-fl-quirofano/4" },
+      { t: "Solicitud de analítica urgente", s: "5 calles · 18 pasos · dos vueltas atrás y una señal de alarma.", href: "#/flujo/ej-fl-analitica/4" },
       { t: "Petición de radiografía simple", s: "5 calles · 21 pasos · 3 subprocesos, cuatro decisiones, una vuelta atrás y dos finales.", href: "#/flujo/ej-fl-radiografia/4" }
     ],
-    proximos: ["Alta hospitalaria programada", "Preparación de quirófano para cirugía programada", "Solicitud de analítica urgente", "Atención integral en el Servicio de Urgencias"]
+    proximos: ["Atención integral en el Servicio de Urgencias"]
   };
 
   const API = { TEMAS, GLOSARIO, EJEMPLOS };

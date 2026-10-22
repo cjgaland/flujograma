@@ -2,17 +2,18 @@
 
 PWA estática (HTML/CSS/JS puro, sin dependencias ni CDN, funciona sin conexión) para **dibujar cualquier proceso sanitario como un diagrama de flujo sin saber dibujar**: se escriben los pasos, quién los hace y qué viene después, y la app dibuja el flujograma con los símbolos normalizados, por calles de actores y por subprocesos.
 
-Seis pasos (en esta versión, del 1 al 4):
+Seis pasos:
 
 1. El proceso: dónde empieza, dónde acaba y para qué sirve.
 2. Actores (cada uno, una calle del dibujo) y subprocesos.
 3. Los pasos: tipo, quién lo hace y a qué paso sigue. Se puede pegar una lista o una tabla de Excel.
 4. El dibujo, que se revisa y se valida con el equipo.
-5. Puntos críticos (próximamente).
-6. Imagen, PDF, Word, draw.io y Excel (próximamente).
+5. Puntos críticos, con propuestas de dónde buscarlos y avisos numerados sobre el dibujo.
+6. Imagen (PNG, SVG), PDF y archivo de draw.io para retocarlo (Word y Excel, próximamente).
 
 - Validador de los errores habituales: sin inicio o sin fin, callejones sin salida, decisiones sin Sí o sin No…
-- **Aprende**, **glosario** y **ejemplos** del curso (toma de constantes y petición de radiografía).
+- **Aprende**, **glosario** y **ejemplos**: los cinco procesos del ejercicio 5 del curso, con sus puntos críticos.
+- Paquete «flujograma-procesos» para que AMFE y Mapa de Riesgos puedan traer el flujograma.
 
 Los datos se guardan solo en el dispositivo; para trabajar en equipo se comparte la copia de seguridad.
 

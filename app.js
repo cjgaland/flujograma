@@ -15,8 +15,17 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.01";
+  const APP_VERSION = "2026.02";
   const NOVEDADES = [
+    { version: "2026.02", fecha: "Octubre 2026", titulo: "Puntos críticos y exportar: imagen, PDF y draw.io", cambios: [
+      "Nuevo paso 5, Puntos críticos: se marcan sobre el dibujo, numerados, con un aviso rojo y amarillo como en el mapa de riesgos del curso. Cada uno con su título, su descripción y los números de fallo del AMFE con los que se relaciona.",
+      "La app propone dónde buscarlos: los traspasos entre calles, las decisiones y los pasos de identificación, traslado, registro, comunicación, medicación, muestras y esperas. Cada propuesta se acepta o se descarta.",
+      "Tabla de puntos críticos por subproceso, como en el ejercicio 8 del curso.",
+      "Nuevo paso 6, Exportar: imagen (PNG y SVG), PDF con la ficha del proceso, el dibujo, los pasos y los puntos críticos, y archivo de draw.io (diagrams.net) para retocarlo con los mismos estilos que las plantillas del curso.",
+      "Retoques ligeros del dibujo: bajar un paso una fila o ponerlo al lado de otro.",
+      "Calles por turnos, como en las soluciones del curso: una calle nueva cada vez que el proceso vuelve a un profesional.",
+      "Nuevos ejemplos del curso: alta hospitalaria, preparación de quirófano y solicitud de analítica urgente. Todos con puntos críticos.",
+      "Las apps AMFE y Mapa de Riesgos podrán traer este flujograma en el mismo navegador (próximamente en ellas)."] },
     { version: "2026.01", fecha: "Octubre 2026", titulo: "Primera versión: escribe los pasos y la app dibuja", cambios: [
       "Asistente en 6 pasos con «Tu siguiente paso» en la portada. En esta versión están disponibles los pasos 1 a 4.",
       "El proceso (dónde empieza y dónde acaba, con objetivo propuesto), los actores (cada uno, una calle del dibujo) y los subprocesos.",
@@ -26,7 +35,7 @@
       "Validador: avisa si falta el inicio o el fin, de los callejones sin salida, de las decisiones sin Sí o sin No y de otros errores habituales.",
       "Ejemplos del curso (toma de constantes y petición de radiografía), Aprende (5 temas), glosario y copia de seguridad."] }
   ];
-  const ENTREGA = 1;   // pasos ya construidos (ver L.PASOS[].entrega)
+  const ENTREGA = 2;   // pasos ya construidos (ver L.PASOS[].entrega)
 
   // ---------- Utilidades ----------
   const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -44,7 +53,7 @@
   const escribir = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
 
   // ---------- Datos (solo en este dispositivo) ----------
-  const KEY_DATOS = "flujograma-datos";
+  const KEY_DATOS = "flujograma-datos", KEY_INTERCAMBIO = "flujograma-intercambio";
   let datos = { flujos: [], ultimaCopia: null };
   (function cargar() {
     const crudo = leer(KEY_DATOS); if (!crudo) return;
@@ -67,6 +76,8 @@
     clearTimeout(tGuardar);
     const fn = () => {
       const ok = escribir(KEY_DATOS, JSON.stringify({ app: "flujograma", v: L.VERSION_DATOS, ultimaCopia: datosUsuario.ultimaCopia, flujos: datosUsuario.flujos }));
+      // Paquete con forma fija para que otras apps del mismo dominio lo lean («Traer de Flujograma»); nunca leen flujograma-datos
+      try { escribir(KEY_INTERCAMBIO, JSON.stringify(L.paqueteIntercambio(datosUsuario.flujos, APP_VERSION, hoy()))); } catch (e) { /* */ }
       if (!ok && !avisoSinEspacio) { avisoSinEspacio = true; toast("No se ha podido guardar en este navegador (¿modo privado o sin espacio?). Haz una copia de seguridad.", 6000); }
     };
     if (inmediato) fn(); else tGuardar = setTimeout(fn, 250);
@@ -85,7 +96,7 @@
   const KEY_FACIL = "flujograma-facil-abierto";
   const facil = (html, titulo = "Explicado fácil") => `<details class="facil" data-recordar="1"${leer(KEY_FACIL) === "1" ? " open" : ""}><summary>${titulo}</summary><div class="facil-body">${html}</div></details>`;
   const avisoHtml = a => {
-    const ver = a.paso && pasoActual !== 3 ? ` <button type="button" class="link-btn" data-act="ver-paso" data-id="${a.paso}">Ver</button>` : "";
+    const ver = a.paso && (pasoActual === 4 || pasoActual === 5) ? ` <button type="button" class="link-btn" data-act="ver-paso" data-id="${a.paso}">Ver</button>` : "";
     return a.nivel === "nota" ? `<div class="note">ℹ ${esc(a.texto)}${ver}</div>` : a.nivel === "error" ? `<div class="aviso-error">✕ ${esc(a.texto)}${ver}</div>` : `<div class="warn">⚠ ${esc(a.texto)}${ver}</div>`;
   };
 
@@ -214,6 +225,7 @@
 
   function renderFlujo(f, n) {
     actual = f; pasoActual = n; nAyuda = 0;
+    if (document.body.classList.contains("ver-informe")) { renderInforme(f); return; }
     const p = L.PASOS[n - 1], disp = pasosDisp();
     const prev = disp.filter(x => x.n < n).pop(), next = disp.find(x => x.n > n);
     const cuerpo = !disponible(p) ? pasoProximo(f, p) : RENDER[n](f);
@@ -222,12 +234,12 @@
       <div class="wiz-titulo"><span class="wiz-paso">Paso ${n} de 6${lleno(nombreFlujo(f)) ? " · " + esc(L.corto(nombreFlujo(f), 60)) : ""}</span><h1 class="page-title">${p.titulo}</h1></div>
       ${cuerpo}
       <div class="wiz-nav no-print">${prev ? `<a class="btn" href="#/flujo/${f.id}/${prev.n}">← ${prev.corto}</a>` : `<span></span>`}${next ? `<a class="btn btn--primary" href="#/flujo/${f.id}/${next.n}">${next.corto} →</a>` : `<span></span>`}</div>`;
-    if (n === 4) iniciarLienzo();
+    if (n === 4 || n === 5) iniciarLienzo();
   }
   function pasoProximo(f, p) {
     return `<p class="page-lead">${p.que}</p>
       <div class="placeholder-box"><p><b>Este paso llegará en una próxima versión.</b></p>
-      <p>${p.n === 5 ? "Mientras, en «Aprende» tienes dónde suelen estar los puntos críticos: en los traspasos entre calles, en las decisiones, en la identificación del paciente, en los registros y en las esperas." : "Mientras, haz una copia de seguridad desde la portada: guarda todo tu trabajo."}</p>
+      <p>Mientras, haz una copia de seguridad desde la portada: guarda todo tu trabajo.</p>
       <div class="toolbar" style="justify-content:center"><a class="btn" href="#/aprende/4">Repasarlo en «Aprende»</a><a class="btn btn--primary" href="#/flujo/${f.id}/4">Volver al dibujo →</a></div></div>`;
   }
 
@@ -394,26 +406,33 @@
   // ---------- Paso 4 · El dibujo ----------
   const KEY_ZOOM = "flujograma-zoom";
   let zoom = null;   // null = ajustar a la pantalla
-  function paso4(f) {
-    const V = f.vista, err = L.errores(f).length;
+  const sinPasos = f => `<div class="placeholder-box"><p><b>Aún no hay nada que dibujar.</b></p><p>Escribe los pasos en el paso 3 y vuelve aquí.</p><div class="toolbar" style="justify-content:center"><a class="btn btn--primary" href="#/flujo/${f.id}/3">Ir al paso 3 →</a></div></div>`;
+  function lienzoHtml(f) {
+    const V = f.vista;
     const seg = (act, val, ops) => `<div class="seg seg--sm" role="group">${ops.map(([v, t]) => `<button type="button" class="${val === v ? "active" : ""}" data-act="${act}" data-v="${v}">${t}</button>`).join("")}</div>`;
-    if (!f.pasos.length) return `<div class="placeholder-box"><p><b>Aún no hay nada que dibujar.</b></p><p>Escribe los pasos en el paso 3 y vuelve aquí.</p><div class="toolbar" style="justify-content:center"><a class="btn btn--primary" href="#/flujo/${f.id}/3">Ir al paso 3 →</a></div></div>`;
-    return `
-      ${facil(`<p>La app coloca cada paso <b>en la calle de quien lo hace</b> y <b>una fila por debajo</b> del paso anterior. Las dos ramas de una decisión se separan: la que va justo debajo sigue recta y la otra sale por un lado. Las vueltas atrás suben por un pasillo lateral.</p>
-        <p><b>Toca un símbolo</b> para corregir su paso aquí mismo. Amplía con los botones o pellizcando con dos dedos.</p>
-        ${practica("Revisad el dibujo <b>con quien hace el proceso cada día</b>: ¿falta algún paso?, ¿alguien hace algo que no sale?, ¿hay esperas o atajos? Cuando estéis de acuerdo, marcadlo como validado.")}`)}
-      <div class="lienzo-barra no-print">
+    return `<div class="lienzo-barra no-print">
         ${seg("v-or", V.orientacion, [["vertical", "↓ De arriba abajo"], ["horizontal", "→ De izquierda a derecha"]])}
         <div class="lienzo-ops">
           ${f.subprocesos.length ? `<button type="button" class="chip${V.subprocesos ? " active" : ""}" data-act="v-sub">Subprocesos</button>` : ""}
+          <button type="button" class="chip${V.calles === "turno" ? " active" : ""}" data-act="v-turno" title="Una calle nueva cada vez que el proceso vuelve a un profesional, como en las soluciones del curso">Calles por turnos</button>
           <button type="button" class="chip${V.numeros ? " active" : ""}" data-act="v-num">Números</button>
           <button type="button" class="chip${V.letra === "grande" ? " active" : ""}" data-act="v-letra">Letra grande</button>
         </div>
         <div class="zoom-btns"><button type="button" class="icon-mini" data-act="z-menos" aria-label="Reducir">−</button><button type="button" class="btn btn--sm" data-act="z-ajustar">Ajustar</button><button type="button" class="icon-mini" data-act="z-mas" aria-label="Ampliar">+</button></div>
       </div>
-      ${err ? `<div class="aviso-error">✕ El dibujo tiene ${plural(err, "error", "errores")} (en rojo). <a href="#avisos4">Ver cuáles</a></div>` : ""}
       <div class="lienzo" id="lienzo" tabindex="0" aria-label="Flujograma. Usa los botones para ampliar o reducir."><div class="lienzo-in" data-zona="lienzo">${svgActual(f)}</div></div>
-      <div data-zona="panel">${panelHtml(f)}</div>
+      <div data-zona="panel">${panelHtml(f)}</div>`;
+  }
+  function paso4(f) {
+    const err = L.errores(f).length;
+    if (!f.pasos.length) return sinPasos(f);
+    return `
+      ${facil(`<p>La app coloca cada paso <b>en la calle de quien lo hace</b> y <b>una fila por debajo</b> del paso anterior. Las dos ramas de una decisión se separan: la que va justo debajo sigue recta y la otra sale por un lado. Las vueltas atrás suben por un pasillo lateral.</p>
+        <p><b>Toca un símbolo</b> para corregir su paso aquí mismo. Amplía con los botones o pellizcando con dos dedos.</p>
+        ${practica("Revisad el dibujo <b>con quien hace el proceso cada día</b>: ¿falta algún paso?, ¿alguien hace algo que no sale?, ¿hay esperas o atajos? Cuando estéis de acuerdo, marcadlo como validado.")}
+        <p>Si algo no queda bien colocado, toca el paso y usa <b>«Retoque del dibujo»</b>: bajarlo una fila o ponerlo al lado de otro. Para retoques finos, descárgalo para draw.io en el paso 6.</p>`)}
+      ${err ? `<div class="aviso-error">✕ El dibujo tiene ${plural(err, "error", "errores")} (en rojo). <a href="#avisos4">Ver cuáles</a></div>` : ""}
+      ${lienzoHtml(f)}
       <div class="leyenda-wrap no-print">${D.leyenda(L.ORDEN_TIPOS.map(t => [t, L.TIPOS[t].corto]))}</div>
       <h2 class="sec-t" id="avisos4">¿Está bien hecho?</h2>
       <div data-zona="avisos3">${validadorHtml(f)}</div>
@@ -421,13 +440,28 @@
       <div class="card" data-zona="validado">${validadoHtml(f)}</div>`;
   }
   function svgActual(f) {
-    const marcar = new Set(L.errores(f).map(a => a.paso).filter(Boolean));
+    const marcar = new Set(pasoActual === 5 ? [] : L.errores(f).map(a => a.paso).filter(Boolean));
     return D.svg(L.disponer(f), { marcar, sel: selPaso, numeros: f.vista.numeros, titulo: "Flujograma: " + (nombreFlujo(f) || "sin nombre"), accesible: true });
   }
   function panelHtml(f) {
     const p = selPaso && L.pasoDe(f, selPaso);
+    if (pasoActual === 5) {
+      if (!p) return `<p class="field-sub panel-pista no-print">Toca un paso del dibujo para marcar en él un punto crítico.</p>`;
+      const l = f.puntos.filter(x => x.pasoId === p.id);
+      return `<div class="panel-paso no-print"><div class="panel-cab"><b>Paso nº ${p.num} · ${esc(L.corto(p.texto || "sin texto", 50))}</b><button type="button" class="link-btn" data-act="panel-cerrar">Cerrar ✕</button></div>
+        ${l.map(x => puntoCard(f, x)).join("") || `<p class="field-sub">Este paso no tiene puntos críticos.</p>`}
+        <div class="toolbar"><button class="btn btn--primary btn--sm" data-act="pc-add" data-id="${p.id}">+ Punto crítico en este paso</button></div></div>`;
+    }
     if (!p) return `<p class="field-sub panel-pista no-print">Toca un símbolo del dibujo para corregir su paso.</p>`;
-    return `<div class="panel-paso no-print"><div class="panel-cab"><b>Paso nº ${p.num}</b><button type="button" class="link-btn" data-act="panel-cerrar">Cerrar ✕</button></div>${pasoCard(f, p, true)}</div>`;
+    return `<div class="panel-paso no-print"><div class="panel-cab"><b>Paso nº ${p.num}</b><button type="button" class="link-btn" data-act="panel-cerrar">Cerrar ✕</button></div>${pasoCard(f, p, true)}${retoqueHtml(f, p)}</div>`;
+  }
+  // Retoques ligeros (mejora H): bajar el paso unas filas o ponerlo al lado de otro. El resto se recoloca solo.
+  function retoqueHtml(f, p) {
+    const fila = parseInt(p.ajuste.fila, 10) || 0, otros = f.pasos.filter(q => q.id !== p.id && !(q.ajuste && q.ajuste.lado === p.id));
+    return `<div class="card retoque"><h3 class="sub-h">Retoque del dibujo</h3>
+      <div class="toolbar"><button type="button" class="btn btn--sm" data-act="aj-bajar" data-id="${p.id}"${p.ajuste.lado ? " disabled" : ""}>↓ Bajar una fila</button><button type="button" class="btn btn--sm" data-act="aj-subir" data-id="${p.id}"${fila ? "" : " disabled"}>↑ Subir</button>${fila ? `<span class="badge">${plural(fila, "fila de más", "filas de más")}</span>` : ""}</div>
+      ${selector("Poner al lado de", `data-aj="${p.id}"`, p.ajuste.lado, [["", "— Donde lo pone la app —"], ...otros.map(q => [q.id, nomPaso(q)])], { help: "Lo coloca en la misma fila que el paso elegido, a su derecha si es de la misma calle." })}
+      ${fila || p.ajuste.lado ? `<button type="button" class="link-btn" data-act="aj-quitar" data-id="${p.id}">Quitar los retoques de este paso</button>` : ""}</div>`;
   }
   function validadoHtml(f) {
     const err = L.errores(f).length;
@@ -473,20 +507,94 @@
     const z = $("[data-zona='lienzo']"); if (z) { z.innerHTML = svgActual(f); aplicarZoom(); }
     const pz = $("[data-zona='panel']"); if (pz) { pz.innerHTML = panelHtml(f); if (id) pz.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
   }
-  window.addEventListener("resize", () => { if (pasoActual === 4 && zoom == null) aplicarZoom(); });
+  window.addEventListener("resize", () => { if ((pasoActual === 4 || pasoActual === 5) && zoom == null) aplicarZoom(); });
 
-  const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4 };
+  // ---------- Paso 5 · Puntos críticos ----------
+  const bpc = (x, k) => `data-pc="${x.id}" data-f="${k}"`;
+  function puntoCard(f, x) {
+    const p = L.pasoDe(f, x.pasoId);
+    return `<div class="sub-card punto-card" data-ptid="${x.id}">
+      <div class="sub-cab"><span class="pc-num" aria-hidden="true">⚠ ${x.num}</span><b>Punto crítico nº ${x.num}</b>${x.origen === "propuesta" ? `<span class="badge">Propuesto por la app</span>` : ""}
+        <span class="sub-acc no-print"><button type="button" class="link-btn link-btn--peligro" data-act="pc-del" data-id="${x.id}">Quitar</button></span></div>
+      <div data-zpc="${x.id}">${avisosPunto(f, x.id)}</div>
+      ${campo(x, "titulo", "Error o punto crítico", { bind: bpc(x, "titulo"), area: true, ph: "p. ej. No colocación de la pulsera identificativa", help: "Lo que puede salir mal en este paso, en una frase. Es un candidato a modo de fallo del AMFE." })}
+      ${campo(x, "descripcion", "Descripción del error o riesgo", { bind: bpc(x, "descripcion"), area: true, opt: true, ph: "p. ej. El paciente no recibe su identificación física, con riesgo de errores en pruebas o tratamientos" })}
+      <div class="dos-col">
+        ${selector("En el paso", bpc(x, "pasoId"), x.pasoId, [["", "— Elige el paso —"], ...f.pasos.map(q => [q.id, nomPaso(q)])])}
+        <div class="field"><div class="field-head"><label class="field-label">Fallos del AMFE</label><span class="field-opt">(opcional)</span>${ayudaBtn("Los números de los fallos del AMFE que corresponden a este punto, separados por comas. Es lo que mostrará el Mapa de Riesgos en el aviso, como «3, 5, 7» en el Documento Final de Urgencias.").btn}</div>
+          <div class="input-wrap"><input class="txt-in" ${bpc(x, "fallos")} value="${esc(x.fallos.join(", "))}" placeholder="p. ej. 3, 5, 7" inputmode="numeric" autocomplete="off" /></div></div>
+      </div>
+      ${p && pasoActual === 5 ? `<button type="button" class="link-btn no-print" data-act="ver-paso" data-id="${p.id}">Ver en el dibujo</button>` : ""}
+    </div>`;
+  }
+  const avisosPunto = (f, id) => L.avisosPuntos(f).filter(a => a.punto === id).map(avisoHtml).join("");
+  function propuestasHtml(f) {
+    const P = L.propuestasPuntos(f), nd = f.descartes.length;
+    if (!P.length) return `<p class="field-sub">No quedan propuestas.${nd ? ` <button type="button" class="link-btn" data-act="prop-recuperar">Recuperar las ${nd} descartadas</button>` : ""}</p>`;
+    return `<div class="prop-lista">${P.map(x => { const p = L.pasoDe(f, x.pasoId); return `<div class="prop">
+        <div class="prop-txt"><b>${esc(x.titulo)}</b><span>Paso nº ${p.num} · ${esc(L.corto(p.texto, 50))}. ${esc(x.motivo)}</span></div>
+        <div class="prop-acc no-print"><button type="button" class="btn btn--sm btn--primary" data-act="prop-ok" data-k="${esc(x.clave)}">Añadir</button><button type="button" class="btn btn--sm" data-act="prop-no" data-k="${esc(x.clave)}">Descartar</button><button type="button" class="link-btn" data-act="ver-paso" data-id="${p.id}">Ver</button></div>
+      </div>`; }).join("")}</div>${nd ? `<p class="field-sub"><button type="button" class="link-btn" data-act="prop-recuperar">Recuperar las ${nd} descartadas</button></p>` : ""}`;
+  }
+  function tablaPuntosHtml(f) {
+    const G = L.puntosPorSub(f);
+    if (!G.length) return `<p class="placeholder-box">Aún no hay puntos críticos. Añade alguno de las propuestas o toca un paso del dibujo.</p>`;
+    return G.map(g => `<h3 class="grupo-t">${g.sub ? subPunto(g.sub) + esc(g.sub.nombre || "Subproceso sin nombre") : "Sin subproceso"}<span class="contador">${g.puntos.length}</span></h3><div class="sub-lista">${g.puntos.map(x => puntoCard(f, x)).join("")}</div>`).join("");
+  }
+  function paso5(f) {
+    if (!f.pasos.length) return sinPasos(f);
+    const nP = L.propuestasPuntos(f).length;
+    return `
+      ${idea("Un <b>punto crítico</b> es un paso donde el proceso puede fallar y dañar al paciente. Es el punto de partida del AMFE: cada uno es un candidato a modo de fallo.")}
+      ${facil(`<p>¿Dónde buscarlos? Donde más se falla:</p>
+        <ul><li><b>Traspasos</b>: cuando el proceso pasa de una calle a otra (información que no llega, paciente que se queda sin vigilar).</li><li><b>Decisiones</b>: si se decide mal, el paciente va por el camino equivocado.</li><li><b>Identificación</b> del paciente y de las muestras.</li><li><b>Registros</b>, <b>comunicación</b>, <b>traslados</b>, <b>medicación</b> y <b>esperas</b>.</li></ul>
+        <p>Escribe cada uno como <b>lo que puede salir mal</b> («No se coloca la pulsera identificativa»), no como su consecuencia («Error de identidad»): esa irá en la columna «efecto» del AMFE.</p>
+        ${practica("Toca un paso del dibujo para marcar en él un punto crítico. En el dibujo sale un aviso con su número, como en el mapa de riesgos del curso.")}`)}
+      ${lienzoHtml(f)}
+      <h2 class="sec-t">Propuestas de la app <span class="contador" data-zona="nprop">${nP}</span></h2>
+      <p class="field-sub">Lugares del proceso donde suele haber riesgo. Añade los que tengan sentido en tu unidad y descarta los demás.</p>
+      <div data-zona="propuestas">${propuestasHtml(f)}</div>
+      <h2 class="sec-t">Puntos críticos por subproceso <span class="contador" data-zona="npc">${f.puntos.length}</span></h2>
+      <div data-zona="tablapc">${tablaPuntosHtml(f)}</div>
+      <div data-zona="avisos">${avisosGenerales(f, 5)}</div>`;
+  }
+
+  // ---------- Paso 6 · Documentos y exportar ----------
+  function paso6(f) {
+    if (!f.pasos.length) return sinPasos(f);
+    const err = L.errores(f).length;
+    return `
+      ${idea("Descarga el flujograma para el documento del proceso, para el AMFE o para retocarlo en <b>draw.io</b>, la herramienta del curso.")}
+      ${err ? `<div class="warn">⚠ El flujograma tiene ${plural(err, "error", "errores")} del validador. Puedes descargarlo igualmente, pero revísalo antes (paso 3).</div>` : ""}
+      <div class="export-grid">
+        <div class="card export-card"><h3 class="sub-h">🖼 Imagen</h3><p class="field-sub">El dibujo con su título, para pegarlo en un documento o una presentación. PNG para cualquier programa; SVG se amplía sin perder calidad.</p>
+          <div class="toolbar"><button class="btn btn--primary" data-act="ex-png">⬇ PNG</button><button class="btn" data-act="ex-svg">⬇ SVG</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">📄 PDF</h3><p class="field-sub">Ficha del proceso, el dibujo, la tabla de pasos, los puntos críticos por subproceso y la leyenda. Primero se ve y después se guarda o se imprime.</p>
+          <div class="toolbar"><button class="btn btn--primary" data-act="informe">Ver y guardar el PDF</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">✎ draw.io (diagrams.net)</h3><p class="field-sub">El dibujo editable, con los mismos estilos que las plantillas del curso: calles, flechas unidas a sus símbolos, Sí y No, subprocesos y avisos de los puntos críticos. Ábrelo en <b>app.diagrams.net</b> (Archivo → Abrir desde → Dispositivo) o en la app de escritorio de draw.io.</p>
+          <div class="toolbar"><button class="btn btn--primary" data-act="ex-drawio">⬇ Archivo .drawio</button></div>
+          <p class="field-sub">Lo que retoques en draw.io no vuelve a esta app: para seguir editando aquí, guarda la copia de seguridad.</p></div>
+        <div class="card export-card export-card--prox"><h3 class="sub-h">Word y Excel</h3><p class="field-sub">Próximamente: el documento del proceso en Word editable y la tabla de pasos y de puntos críticos en Excel.</p></div>
+      </div>
+      <h2 class="sec-t">Para otras apps</h2>
+      ${practica("Las apps <b>AMFE</b> y <b>Mapa de Riesgos</b> podrán traer este flujograma (sus subprocesos, sus pasos y sus puntos críticos) con un botón «Traer de Flujograma», si las usas en este mismo navegador. Desde otro dispositivo, con la copia de seguridad.")}
+      <div class="toolbar no-print"><button class="btn" data-act="copia">⬇ Copia de seguridad</button></div>`;
+  }
+
+  const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4, 5: paso5, 6: paso6 };
 
   // Refresca lo que depende de lo escrito sin repintar los campos (no se pierde el foco)
   let tLienzo = null;
   function refrescar(idPaso) {
     const f = actual; if (!f) return;
     const n = pasoActual;
-    const Z = { pasos: () => pasosInner(f, n), avisos: () => avisosGenerales(f, n), avisos3: () => validadorHtml(f), nact: () => String(f.actores.length), nsub: () => String(f.subprocesos.length), validado: () => validadoHtml(f) };
+    const Z = { pasos: () => pasosInner(f, n), avisos: () => avisosGenerales(f, n), avisos3: () => validadorHtml(f), nact: () => String(f.actores.length), nsub: () => String(f.subprocesos.length), validado: () => validadoHtml(f),
+      nprop: () => String(L.propuestasPuntos(f).length), npc: () => String(f.puntos.length) };
     $$("[data-zona]").forEach(el => { const fn = Z[el.dataset.zona]; if (fn) el.innerHTML = fn(); });
     $$("[data-zav]").forEach(el => { el.innerHTML = avisosPaso(f, el.dataset.zav); });
+    $$("[data-zpc]").forEach(el => { el.innerHTML = avisosPunto(f, el.dataset.zpc); });
     $$(".paso-card").forEach(el => { const p = L.pasoDe(f, el.dataset.pid), t = $(".rg-toggle", el); if (p && t) t.innerHTML = pasoCabInner(f, p); });
-    if (n === 4) { clearTimeout(tLienzo); tLienzo = setTimeout(() => { const z = $("[data-zona='lienzo']"); if (z) { z.innerHTML = svgActual(f); aplicarZoom(); } }, 150); }
+    if (n === 4 || n === 5) { clearTimeout(tLienzo); tLienzo = setTimeout(() => { const z = $("[data-zona='lienzo']"); if (z) { z.innerHTML = svgActual(f); aplicarZoom(); } }, 150); }
   }
   function repintar() {
     const y = window.scrollY, l = $("#lienzo"), sx = l ? l.scrollLeft : 0, sy = l ? l.scrollTop : 0;
@@ -556,9 +664,238 @@
   }
   const rutaActual = () => location.hash.split("?")[0];
 
+  // ---------- Exportar: imagen, draw.io y vista para imprimir / PDF ----------
+  const fechaArchivo = () => new Date().toLocaleDateString("es-ES").replace(/\//g, "-");
+  function nombreArchivo(ext, f = actual) {
+    const base = "Flujograma " + (f ? (nombreFlujo(f) || "").slice(0, 60) : "");
+    return `${base.replace(/[\\/:*?"<>|%]/g, "").trim()} ${fechaArchivo()}.${ext}`;
+  }
+  function compartirOBajar(blob, nombre, msg) {
+    const file = new File([blob], nombre, { type: blob.type });
+    if (esIOS() && navigator.canShare && navigator.canShare({ files: [file] })) navigator.share({ files: [file], title: nombre }).catch(() => {});
+    else { descargar(blob, nombre); toast(msg, 3500); }
+  }
+  const tituloDibujo = f => "Proceso " + (f.proceso || f.titulo || "sin nombre");
+  function marcarExportado(f) { if (f.exportado !== hoyIso()) { f.exportado = hoyIso(); tocado(f); refrescar(); } }
+  function svgExport(f) { return D.svg(L.disponer(f), { numeros: f.vista.numeros, cabecera: tituloDibujo(f), titulo: tituloDibujo(f) }); }
+  function exportarImagen(f, tipo) {
+    const s = svgExport(f);
+    if (tipo === "svg") { compartirOBajar(new Blob([s], { type: "image/svg+xml" }), nombreArchivo("svg", f), "Imagen SVG descargada."); marcarExportado(f); return; }
+    const im = new Image(), w = Number(/width="(\d+)/.exec(s)[1]), h = Number(/height="(\d+)/.exec(s)[1]);
+    // Doble resolución, sin pasar del tamaño máximo de un lienzo en el móvil
+    const k = Math.min(2, Math.sqrt(16e6 / (w * h)));
+    im.onload = () => {
+      const cv = document.createElement("canvas"); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+      const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(im, 0, 0, cv.width, cv.height);
+      cv.toBlob(b => { if (!b) { toast("No se ha podido crear la imagen.", 4000); return; } compartirOBajar(b, nombreArchivo("png", f), "Imagen PNG descargada."); marcarExportado(f); }, "image/png");
+    };
+    im.onerror = () => toast("No se ha podido crear la imagen.", 4000);
+    im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s);
+  }
+  function exportarDrawio(f) {
+    try {
+      const x = D.drawio(L.disponer(f), { titulo: tituloDibujo(f), numeros: f.vista.numeros, id: f.id });
+      compartirOBajar(new Blob([x], { type: "application/xml" }), nombreArchivo("drawio", f), "Archivo de draw.io descargado. Ábrelo en app.diagrams.net.");
+      marcarExportado(f);
+    } catch (e) { toast("No se ha podido crear el archivo de draw.io.", 4000); }
+  }
+  // Vista para imprimir / PDF: ficha, dibujo, pasos, puntos críticos y leyenda
+  let porSubproceso = false;
+  function informeCab(titulo, sub) {
+    return `<header class="print-head print-only"><h1>${esc(titulo)}</h1><p>${esc(sub ? sub + " · " : "")}Flujograma · Calidad y seguridad del paciente · ${new Date().toLocaleDateString("es-ES")}</p></header>`;
+  }
+  function informePie() {
+    return `<footer class="print-foot print-only">
+      <span class="autor-titulo">Aplicación desarrollada por</span>
+      <span class="autor"><b>Carlos J. Galán Doval</b> · Médico de Familia · Técnico en Calidad y Seguridad del Paciente</span>
+      <span class="autor"><b>Rafael J. Romero de Castilla Gil</b> · Médico de Familia · Responsable del Área de Calidad y Seguridad del Paciente</span>
+      <span class="autor-area">Área de Gestión Sanitaria Sur de Córdoba · Andalucía</span>
+      <span class="autor-uso">De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</span>
+      <span class="footer-version">Flujograma · versión ${APP_VERSION}</span>
+    </footer>`;
+  }
+  // Un subproceso solo, para dibujarlo en su propia página (las flechas que salen de él se quitan)
+  function soloSub(f, s) {
+    const ids = new Set(f.pasos.filter(p => p.subprocesoId === s.id).map(p => p.id));
+    return Object.assign({}, f, { pasos: f.pasos.filter(p => ids.has(p.id)).map(p => Object.assign({}, p, { siguientes: p.siguientes.filter(x => ids.has(x.a)), con: ids.has(p.con) ? p.con : "" })), puntos: f.puntos.filter(x => ids.has(x.pasoId)) });
+  }
+  function renderInforme(f) {
+    const fila = (k, v) => lleno(v) ? `<tr><th>${k}</th><td>${esc(v)}</td></tr>` : "";
+    const d = L.disponer(f), r = L.resumen(f), apaisado = d.ancho > d.alto * 1.1;
+    let est = $("#estilo-pagina"); if (!est) { est = document.createElement("style"); est.id = "estilo-pagina"; document.head.appendChild(est); }
+    est.textContent = `@page { size: A4 ${apaisado ? "landscape" : "portrait"}; margin: 12mm; }`;
+    const subsConPasos = f.subprocesos.filter(s => f.pasos.some(p => p.subprocesoId === s.id));
+    const salidas = p => { const S = p.siguientes.map(x => { const q = L.pasoDe(f, x.a); return q ? (x.etiqueta === "si" ? "Sí → " : x.etiqueta === "no" ? "No → " : "") + q.num : ""; }).filter(Boolean); return S.join(" · ") || (p.tipo === "terminal" ? "Fin" : "—"); };
+    const G = L.puntosPorSub(f);
+    view.innerHTML = `
+      <div class="informe-bar informe-only"><button class="btn" data-act="volver">← Volver</button><span class="informe-acc">${subsConPasos.length > 1 ? `<button class="btn${porSubproceso ? " btn--on" : ""}" data-act="inf-sub">${porSubproceso ? "✓ " : ""}Un subproceso por página</button>` : ""}<button class="btn btn--primary" data-act="imprimir">Guardar / imprimir</button></span></div>
+      ${informeCab("Flujograma · " + (f.proceso || nombreFlujo(f) || "Proceso sin nombre"), f.unidad)}
+      <div class="ficha">
+        <div class="ficha-cab"><span class="wiz-paso">Flujograma del proceso</span><h2 class="ficha-nombre">${esc(f.proceso || nombreFlujo(f) || "Proceso sin nombre")}</h2></div>
+        <table class="ficha-t">${fila("Unidad o servicio", f.unidad)}${fila("Objetivo", f.objetivo)}${fila("Empieza", f.inicio)}${fila("Termina", f.fin)}${fila("Qué queda dentro", f.incluye)}${fila("Qué queda fuera", f.excluye)}${fila("Responsable", f.responsable)}${fila("Fecha", f.fecha)}${fila("Validado con el equipo", fmtFecha(f.validado))}
+          <tr><th>Resumen</th><td>${plural(r.pasos, "paso", "pasos")} · ${plural(r.actores, "actor", "actores")} · ${plural(r.decisiones, "decisión", "decisiones")} · ${plural(r.traspasos, "traspaso", "traspasos")} entre calles · ${plural(r.puntos, "punto crítico", "puntos críticos")}</td></tr></table>
+      </div>
+      <h2 class="sec-t">Diagrama</h2>
+      <div class="informe-graf informe-dib">${D.svg(d, { numeros: f.vista.numeros, cabecera: tituloDibujo(f), titulo: tituloDibujo(f) })}</div>
+      <div class="leyenda-wrap">${D.leyenda(L.ORDEN_TIPOS.map(t => [t, L.TIPOS[t].corto]))}</div>
+      ${porSubproceso ? subsConPasos.map((s, i) => `<div class="doc-salto"></div><h2 class="sec-t">Subproceso ${f.subprocesos.indexOf(s) + 1}: ${esc(s.nombre)}</h2><p class="field-sub">${esc([s.inicio && "Empieza: " + s.inicio, s.fin && "Termina: " + s.fin].filter(Boolean).join(" · "))}</p><div class="informe-graf informe-dib">${D.svg(L.disponer(soloSub(f, s), { subprocesos: false }), { numeros: f.vista.numeros })}</div>`).join("") : ""}
+      ${f.subprocesos.length ? `<h2 class="sec-t">Subprocesos</h2><div class="table-wrap"><table class="mini tabla-riesgos"><thead><tr><th>Nº</th><th>Subproceso</th><th>Descripción</th><th>Inicio</th><th>Fin</th><th>Roles</th></tr></thead><tbody>${f.subprocesos.map((s, i) => `<tr><td>${i + 1}</td><td>${subPunto(s)} <b>${esc(s.nombre)}</b></td><td>${esc(s.descripcion)}</td><td>${esc(s.inicio)}</td><td>${esc(s.fin)}</td><td>${esc(s.roles)}</td></tr>`).join("")}</tbody></table></div>` : ""}
+      <h2 class="sec-t">Pasos</h2>
+      <div class="table-wrap"><table class="mini tabla-riesgos"><thead><tr><th>Nº</th><th>Tipo</th><th>Paso</th><th>Quién</th>${f.subprocesos.length ? "<th>Subproceso</th>" : ""}<th>Sigue a</th></tr></thead><tbody>${f.pasos.map(p => { const a = L.actorDe(f, p), s = L.subDe(f, p); return `<tr><td>${p.num}</td><td>${tipoChip(p.tipo)} ${esc(L.TIPOS[p.tipo].corto)}</td><td><b>${esc(p.texto)}</b>${lleno(p.nota) ? `<br><span class="field-sub">${esc(p.nota)}</span>` : ""}</td><td>${esc(a ? a.nombre : "")}</td>${f.subprocesos.length ? `<td>${esc(s ? s.nombre : "")}</td>` : ""}<td>${esc(salidas(p))}</td></tr>`; }).join("")}</tbody></table></div>
+      ${G.length ? `<h2 class="sec-t">Puntos críticos</h2><div class="table-wrap"><table class="mini tabla-riesgos"><thead><tr><th>Id</th><th>Subproceso</th><th>Paso</th><th>Error o punto crítico</th><th>Descripción del error o riesgo</th><th>Fallos AMFE</th></tr></thead><tbody>${G.map(g => g.puntos.map(x => { const p = L.pasoDe(f, x.pasoId); return `<tr><td>${x.num}</td><td>${esc(g.sub ? g.sub.nombre : "")}</td><td>${p ? p.num + ". " + esc(L.corto(p.texto, 40)) : ""}</td><td><b>${esc(x.titulo)}</b></td><td>${esc(x.descripcion)}</td><td>${esc(x.fallos.join(", "))}</td></tr>`; }).join("")).join("")}</tbody></table></div>` : ""}
+      ${lleno(f.notas) ? `<p class="field-sub">${esc(f.notas)}</p>` : ""}
+      ${informePie()}`;
+    if (actual === f) marcarExportado(f);
+  }
+  // ---------- PDF en iOS (sin librerías; mismo método que AMFE y Auditorías) ----------
+  // En iOS, window.print() no hace nada cuando la app está instalada en la pantalla de inicio.
+  function pdfDesdeJPEGs(paginas, wPt, hPt) {
+    const enc = new TextEncoder(), partes = [], offs = []; let pos = 0;
+    const push = x => { const b = typeof x === "string" ? enc.encode(x) : x; partes.push(b); pos += b.length; };
+    const obj = (n, cuerpo) => { offs[n] = pos; push(`${n} 0 obj\n`); cuerpo(); push("\nendobj\n"); };
+    push("%PDF-1.4\n"); push(new Uint8Array([37, 226, 227, 207, 211, 10]));
+    const n = paginas.length;
+    obj(1, () => push("<< /Type /Catalog /Pages 2 0 R >>"));
+    obj(2, () => push(`<< /Type /Pages /Kids [${paginas.map((_, i) => `${3 + i * 3} 0 R`).join(" ")}] /Count ${n} >>`));
+    paginas.forEach((p, i) => {
+      const pg = 3 + i * 3, cont = pg + 1, img = pg + 2, flujo = `q ${wPt} 0 0 ${hPt} 0 0 cm /Im${i} Do Q`;
+      obj(pg, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${wPt} ${hPt}] /Resources << /XObject << /Im${i} ${img} 0 R >> >> /Contents ${cont} 0 R >>`));
+      obj(cont, () => { push(`<< /Length ${flujo.length} >>\nstream\n${flujo}\nendstream`); });
+      obj(img, () => { push(`<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.bytes.length} >>\nstream\n`); push(p.bytes); push("\nendstream"); });
+    });
+    const total = 3 + n * 3, xref = pos;
+    let x = `xref\n0 ${total}\n0000000000 65535 f \n`;
+    for (let k = 1; k < total; k++) x += String(offs[k]).padStart(10, "0") + " 00000 n \n";
+    push(x + `trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+    return new Blob(partes, { type: "application/pdf" });
+  }
+  async function generarPDF() {
+    const ANCHO = 720, K = 2;
+    const A4W = 595.28, A4H = 841.89, MARGEN_PT = 34;
+    const PX = (A4W - 2 * MARGEN_PT) / ANCHO;
+    const PW = A4W / PX, PH = A4H / PX, M = MARGEN_PT / PX, ALTO_UTIL = PH - 2 * M;
+    const hoja = document.createElement("div");
+    hoja.className = "view";
+    hoja.style.cssText = `position:absolute;left:-20000px;top:0;width:${ANCHO}px;max-width:none;margin:0;padding:0;box-shadow:none;`;
+    hoja.innerHTML = $("#view").innerHTML;
+    $$(".informe-bar, [id]", hoja).forEach(el => { if (el.classList.contains("informe-bar")) el.remove(); else el.removeAttribute("id"); });
+    $$("details", hoja).forEach(d => { d.open = true; });
+    document.body.appendChild(hoja);
+    try {
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const R0 = hoja.getBoundingClientRect();
+      const ops = [], cortes = [0], bloques = [];
+      const SIN_CORTE = ".print-head, .chart-card, tr, .formula, .box, .print-foot, h1, h2, h3, .ficha-cab, .leyenda";
+      const rel = r => ({ x: r.left - R0.left, y: r.top - R0.top, w: r.width, h: r.height });
+      const hayColor = c => !!c && c !== "transparent" && !/rgba\([^)]*,\s*0\)$/.test(c);
+      const LADOS = ["Top", "Right", "Bottom", "Left"];
+      const texto = (n, cs) => {
+        const t = n.textContent, re = /\S+/g, rg = document.createRange(); let m;
+        const font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        while ((m = re.exec(t))) {
+          rg.setStart(n, m.index); rg.setEnd(n, m.index + m[0].length);
+          const rs = rg.getClientRects(); if (!rs.length) continue;
+          ops.push({ t: "txt", s: cs.textTransform === "uppercase" ? m[0].toUpperCase() : m[0], r: rel(rs[0]), font, col: cs.color, ls: cs.letterSpacing });
+        }
+      };
+      const recorre = el => {
+        const cs = getComputedStyle(el);
+        if (cs.display === "none" || cs.visibility === "hidden") return;
+        const r = rel(el.getBoundingClientRect());
+        if (r.h > 0) cortes.push(r.y + r.h);
+        if (el.matches(SIN_CORTE)) bloques.push([r.y, r.y + r.h]);
+        if (el instanceof SVGSVGElement) { ops.push({ t: "svg", el, r }); return; }
+        const bordes = LADOS.map(l => [parseFloat(cs[`border${l}Width`]) || 0, cs[`border${l}Color`]]);
+        if (hayColor(cs.backgroundColor) || bordes.some(b => b[0] > 0 && hayColor(b[1]))) ops.push({ t: "caja", r, bg: cs.backgroundColor, rad: parseFloat(cs.borderTopLeftRadius) || 0, bordes });
+        if (el.tagName === "LI") {
+          const ol = el.parentElement.tagName === "OL", idx = Array.prototype.indexOf.call(el.parentElement.children, el) + 1;
+          ops.push({ t: "txt", s: ol ? idx + "." : "•", r: { x: r.x - (ol ? 20 : 14), y: r.y, w: 16, h: parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4 }, font: `normal 700 ${cs.fontSize} ${cs.fontFamily}`, col: ol ? "#3730a3" : cs.color, ls: "normal" });
+        }
+        for (const n of el.childNodes) {
+          if (n.nodeType === 1) recorre(n);
+          else if (n.nodeType === 3 && n.textContent.trim()) texto(n, cs);
+        }
+      };
+      recorre(hoja);
+      for (const op of ops.filter(o => o.t === "svg")) {
+        const cl = op.el.cloneNode(true), orig = [op.el, ...op.el.querySelectorAll("*")], copia = [cl, ...cl.querySelectorAll("*")];
+        orig.forEach((o, i) => { const cs = getComputedStyle(o); copia[i].setAttribute("style", ["fill", "stroke", "stroke-width", "stroke-dasharray", "font-family", "font-size", "font-weight"].map(p => `${p}:${cs.getPropertyValue(p)}`).join(";")); });
+        cl.setAttribute("xmlns", "http://www.w3.org/2000/svg"); cl.setAttribute("width", op.r.w); cl.setAttribute("height", op.r.h);
+        op.img = await new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(cl)); });
+      }
+      const alto = Math.ceil(R0.height);
+      const parte = y => bloques.some(([a, b]) => a < y - 0.5 && y + 0.5 < b && b - a < ALTO_UTIL);
+      const cands = [...new Set(cortes.map(c => Math.ceil(c)))].sort((a, b) => a - b);
+      const pags = []; let y0 = 0;
+      while (y0 < alto - 1) {
+        const lim = y0 + ALTO_UTIL;
+        if (lim >= alto) { pags.push([y0, alto]); break; }
+        const y = cands.filter(c => c > y0 + 80 && c <= lim && !parte(c)).pop() || Math.floor(lim);
+        pags.push([y0, y]); y0 = y;
+      }
+      const ponFuente = (ctx, f) => { ctx.font = "10px serif"; ctx.font = f; if (ctx.font === "10px serif") ctx.font = f.replace(/^(.*?\d+(\.\d+)?px).*$/, "$1 sans-serif"); };
+      const caja = (ctx, op) => {
+        const { x, y, w, h } = op.r, rad = Math.min(op.rad, w / 2, h / 2);
+        const camino = () => { ctx.beginPath(); if (rad > 0 && ctx.roundRect) ctx.roundRect(x, y, w, h, rad); else ctx.rect(x, y, w, h); };
+        if (hayColor(op.bg)) { ctx.fillStyle = op.bg; camino(); ctx.fill(); }
+        const [t, d, b, l] = op.bordes;
+        if (op.bordes.every(z => z[0] === t[0] && z[1] === t[1]) && t[0] > 0 && hayColor(t[1])) { ctx.strokeStyle = t[1]; ctx.lineWidth = t[0]; ctx.beginPath(); if (rad > 0 && ctx.roundRect) ctx.roundRect(x + t[0] / 2, y + t[0] / 2, w - t[0], h - t[0], Math.max(0, rad - t[0] / 2)); else ctx.rect(x + t[0] / 2, y + t[0] / 2, w - t[0], h - t[0]); ctx.stroke(); return; }
+        const lado = (z, rx, ry, rw, rh) => { if (z[0] > 0 && hayColor(z[1])) { ctx.fillStyle = z[1]; ctx.fillRect(rx, ry, rw, rh); } };
+        lado(t, x, y, w, t[0]); lado(b, x, y + h - b[0], w, b[0]); lado(l, x, y, l[0], h); lado(d, x + w - d[0], y, d[0], h);
+      };
+      const dibujaPaginas = conSVG => pags.map(([a, b]) => {
+        const cv = document.createElement("canvas"); cv.width = Math.round(PW * K); cv.height = Math.round(PH * K);
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.scale(K, K); ctx.translate(M, M - a);
+        ctx.beginPath(); ctx.rect(-2, a, ANCHO + 4, b - a); ctx.clip();
+        for (const op of ops) {
+          if (op.r.y >= b || op.r.y + op.r.h <= a) continue;
+          if (op.t === "caja") caja(ctx, op);
+          else if (op.t === "svg") { if (conSVG && op.img) ctx.drawImage(op.img, op.r.x, op.r.y, op.r.w, op.r.h); }
+          else {
+            ponFuente(ctx, op.font); ctx.fillStyle = op.col; ctx.textBaseline = "alphabetic";
+            if ("letterSpacing" in ctx) ctx.letterSpacing = op.ls && op.ls !== "normal" ? op.ls : "0px";
+            const mt = ctx.measureText(op.s), asc = mt.fontBoundingBoxAscent || mt.actualBoundingBoxAscent || op.r.h * 0.8, desc = mt.fontBoundingBoxDescent || mt.actualBoundingBoxDescent || op.r.h * 0.2;
+            ctx.fillText(op.s, op.r.x, op.r.y + (op.r.h - (asc + desc)) / 2 + asc);
+          }
+        }
+        const url = cv.toDataURL("image/jpeg", 0.9), bin = atob(url.slice(url.indexOf(",") + 1)), bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return { bytes, w: cv.width, h: cv.height };
+      });
+      let paginas;
+      try { paginas = dibujaPaginas(true); } catch (e) { paginas = dibujaPaginas(false); }
+      return pdfDesdeJPEGs(paginas, A4W, A4H);
+    } finally { hoja.remove(); }
+  }
+  let pdfListo = null;
+  function prepararPDF() {
+    pdfListo = null; const r = rutaActual();
+    setTimeout(() => { if (rutaActual() === r && document.body.classList.contains("ver-informe")) generarPDF().then(b => { pdfListo = { r, blob: b }; }).catch(() => {}); }, 300);
+  }
+  async function guardarPDF() {
+    if (!document.body.classList.contains("ver-informe")) { irInforme(); toast("Preparando el PDF… pulsa de nuevo «Guardar / imprimir» en un momento.", 4000); return; }
+    let blob = pdfListo && pdfListo.r === rutaActual() ? pdfListo.blob : null;
+    if (!blob) { toast("Preparando el PDF…"); try { blob = await generarPDF(); pdfListo = { r: rutaActual(), blob }; } catch (e) { toast("No se ha podido crear el PDF.", 4000); return; } }
+    const file = new File([blob], nombreArchivo("pdf"), { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: file.name }); toast(""); }
+      catch (e) { if (e && e.name === "AbortError") { toast(""); return; } toast("PDF listo: pulsa otra vez «Guardar / imprimir».", 4000); }
+      return;
+    }
+    descargar(blob, file.name); toast("PDF descargado.", 3000);
+  }
+  function irInforme() { location.hash = rutaActual() + "?informe=1"; }
+  function imprimir() {
+    if (esIOS()) { guardarPDF(); return; }
+    if (!document.body.classList.contains("ver-informe")) { irInforme(); setTimeout(() => window.print(), 400); return; }
+    window.print();
+  }
+
   // ---------- Copia de seguridad e importar ----------
   async function copiaSeguridad() {
-    const contenido = JSON.stringify({ app: "flujograma", v: L.VERSION_DATOS, exportado: hoy(), flujos: datosUsuario.flujos }, null, 1);
+    const contenido = JSON.stringify({ app: "flujograma", v: L.VERSION_DATOS, exportado: hoy(), flujos: datosUsuario.flujos, intercambio: L.paqueteIntercambio(datosUsuario.flujos, APP_VERSION, hoy()) }, null, 1);
     const nombre = `Flujograma copia ${new Date().toISOString().slice(0, 10)}.json`;
     const blob = new Blob([contenido], { type: "application/json" });
     const file = new File([blob], nombre, { type: "application/json" });
@@ -622,13 +959,14 @@
   function noEncontrado(que, href, txt) { view.innerHTML = `<div class="error-box">No se encuentra ${que} en este dispositivo.</div><p><a href="${href}">${txt}</a></p>`; }
   let previo = null;
   function route() {
-    const [ruta] = (location.hash.replace(/^#\/?/, "") || "").split("?");
-    const partes = ruta.split("/");
+    const [ruta, qs] = (location.hash.replace(/^#\/?/, "") || "").split("?");
+    const partes = ruta.split("/"), informe = new URLSearchParams(qs || "").get("informe") === "1";
+    document.body.classList.toggle("ver-informe", informe);
     actual = null;
     const idR = partes[1] || "", ej = ejemplos();
     modoEjemplo = partes[0] === "ejemplos" || (esIdEjemplo(idR) && ej.flujos.some(x => x.id === idR));
     datos = modoEjemplo ? ej : datosUsuario;
-    $("#banner-ejemplo").hidden = !modoEjemplo || partes[0] === "ejemplos";
+    $("#banner-ejemplo").hidden = !modoEjemplo || informe || partes[0] === "ejemplos";
     let navR = partes[0];
     if (partes[0] === "flujo" && partes[1] === "nuevo") {
       const f = L.nuevoFlujo(genId(), hoy()); borradores.set(f.id, f); abiertos.clear(); pegarAbierto = false; selPaso = ""; previo = f.id; zoom = null;
@@ -639,8 +977,9 @@
       else {
         if (previo !== f.id) { abiertos.clear(); pegarAbierto = false; selPaso = ""; previo = f.id; zoom = null; }
         let n = parseInt(partes[2], 10);
-        if (!(n >= 1 && n <= 6)) { const p = L.pasoPendiente(f, ENTREGA); n = p ? p.n : 4; history.replaceState(null, "", `#/flujo/${f.id}/${n}`); }
+        if (!(n >= 1 && n <= 6)) { const p = L.pasoPendiente(f, ENTREGA); n = p ? p.n : 6; history.replaceState(null, "", `#/flujo/${f.id}/${n}${informe ? "?informe=1" : ""}`); }
         renderFlujo(f, n);
+        if (informe && esIOS()) prepararPDF();
       }
       navR = "flujo";
     } else if (partes[0] === "flujo") renderLista();
@@ -688,6 +1027,14 @@
       if (esSel) { if (pasoActual === 4) seleccionar(p.id); else repintar(); refrescar(); } else refrescar(p.id);
       return;
     }
+    if (t.dataset.pc) {
+      const x = buscaEn(f.puntos, t.dataset.pc); if (!x) return;
+      if (k === "fallos") x.fallos = L.numsFallos(t.value); else x[k] = t.value;
+      tocado(f);
+      if (esSel) repintar(); else refrescar();
+      return;
+    }
+    if (t.dataset.aj) { const p = L.pasoDe(f, t.dataset.aj); if (!p) return; p.ajuste.lado = t.value; if (t.value) p.ajuste.fila = ""; tocado(f); seleccionar(p.id); refrescar(); return; }
     if (t.dataset.sal) {
       const p = L.pasoDe(f, t.dataset.sal); if (!p) return;
       L.ponerSalida(p, t.dataset.c, t.value); tocado(f);
@@ -822,14 +1169,48 @@
     }
     // --- Paso 4 ---
     else if (act === "ver-paso" && f) {
-      if (pasoActual !== 4) return;
+      if (pasoActual !== 4 && pasoActual !== 5) return;
       seleccionar(id);
       const s = $(`#lienzo .fl-nodo[data-paso="${id}"]`), l = $("#lienzo");
       if (s && l) { const r = s.getBoundingClientRect(), rl = l.getBoundingClientRect(); l.scrollLeft += r.left - rl.left - rl.width / 2 + r.width / 2; l.scrollTop += r.top - rl.top - rl.height / 2 + r.height / 2; l.scrollIntoView({ block: "nearest" }); }
     }
     else if (act === "panel-cerrar") seleccionar("");
+    // --- Retoques ---
+    else if ((act === "aj-bajar" || act === "aj-subir" || act === "aj-quitar") && f) {
+      const p = L.pasoDe(f, id); if (!p) return;
+      const n = parseInt(p.ajuste.fila, 10) || 0;
+      if (act === "aj-quitar") { p.ajuste.fila = ""; p.ajuste.lado = ""; } else p.ajuste.fila = String(Math.max(0, Math.min(9, n + (act === "aj-bajar" ? 1 : -1)))).replace(/^0$/, "");
+      tocado(f); seleccionar(p.id);
+    }
+    // --- Paso 5 ---
+    else if (act === "pc-add" && f) {
+      const x = L.nuevoPunto(genId(), L.siguienteNum(f.puntos)); x.pasoId = id; f.puntos.push(x); tocado(f);
+      seleccionar(id); refrescar(); const z = $("[data-zona='tablapc']"); if (z) z.innerHTML = tablaPuntosHtml(f);
+      const el = $(`.panel-paso [data-pc="${x.id}"][data-f="titulo"]`); if (el) el.focus();
+    }
+    else if (act === "pc-del" && f) {
+      const x = buscaEn(f.puntos, id); if (!x) return;
+      const hacer = () => { f.puntos = f.puntos.filter(y => y.id !== id); tocado(f); repintar(); };
+      if (lleno(x.titulo) || lleno(x.descripcion)) confirmar(`<p>Se quitará el punto crítico nº ${x.num} «${esc(L.corto(x.titulo || "sin título", 60))}».${x.clave ? " La propuesta volverá a la lista." : ""}</p>`, "Quitar", hacer); else hacer();
+    }
+    else if (act === "prop-ok" && f) {
+      const pr = L.propuestasPuntos(f).find(x => x.clave === b.dataset.k); if (!pr) return;
+      const x = L.aceptarPropuesta(f, pr, genId); tocado(f); repintar();
+      toast(`Añadido el punto crítico nº ${x.num}. Ajusta el título y escribe la descripción.`, 3500);
+    }
+    else if (act === "prop-no" && f) { if (!f.descartes.includes(b.dataset.k)) f.descartes.push(b.dataset.k); tocado(f); repintar(); }
+    else if (act === "prop-recuperar" && f) { f.descartes = []; tocado(f); repintar(); }
+    // --- Paso 6 ---
+    else if (act === "ex-png" && f) exportarImagen(f, "png");
+    else if (act === "ex-svg" && f) exportarImagen(f, "svg");
+    else if (act === "ex-drawio" && f) exportarDrawio(f);
+    else if (act === "informe") irInforme();
+    else if (act === "volver") location.hash = rutaActual();
+    else if (act === "imprimir") imprimir();
+    else if (act === "inf-sub") { porSubproceso = !porSubproceso; const y = window.scrollY; renderInforme(actual); window.scrollTo(0, y); }
     else if (act === "v-or" && f) { f.vista.orientacion = b.dataset.v; zoom = null; tocado(f); repintar(); }
     else if (act === "v-sub" && f) { f.vista.subprocesos = !f.vista.subprocesos; tocado(f); repintar(); }
+    else if (act === "v-turno" && f) { f.vista.calles = f.vista.calles === "turno" ? "actor" : "turno"; tocado(f); repintar(); }
     else if (act === "v-num" && f) { f.vista.numeros = !f.vista.numeros; tocado(f); repintar(); }
     else if (act === "v-letra" && f) { f.vista.letra = f.vista.letra === "grande" ? "normal" : "grande"; tocado(f); repintar(); }
     else if (act === "z-mas") ponerZoom(zoomActual() * 1.25);
@@ -914,7 +1295,7 @@
   window.addEventListener("appinstalled", () => { const b = $("#btn-instalar"); if (b) b.hidden = true; });
   if (matchMedia("(display-mode: standalone)").matches || navigator.standalone) { const i = $("#instalar-bloque"); if (i) i.classList.add("instalada"); }
 
-  window.FLUJOGRAMA = { datos: () => datos };   // solo para pruebas desde la consola
+  window.FLUJOGRAMA = { datos: () => datos, generarPDF };   // solo para pruebas desde la consola
 
   // ---------- Arranque ----------
   buildNav();

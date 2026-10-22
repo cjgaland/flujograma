@@ -7,6 +7,7 @@ let ok = 0, mal = 0;
 const t = (nombre, cond) => { if (cond) ok++; else { mal++; console.log("✕", nombre); } };
 let n = 0; const genId = () => "t" + (n++);
 const clon = o => JSON.parse(JSON.stringify(o));
+const CONST = () => C.EJEMPLOS.flujos.find(x => x.id === "ej-fl-constantes");
 const solapes = d => { const r = []; for (const a of d.nodos) for (const b of d.nodos) if (a !== b && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h) r.push([a.num, b.num]); return r; };
 const ortogonal = e => e.puntos.every((p, i) => i === 0 || Math.abs(p[0] - e.puntos[i - 1][0]) < 0.2 || Math.abs(p[1] - e.puntos[i - 1][1]) < 0.2);
 const tocaNodo = (pt, nd) => pt[0] >= nd.x - 0.6 && pt[0] <= nd.x + nd.w + 0.6 && pt[1] >= nd.y - 0.6 && pt[1] <= nd.y + nd.h + 0.6;
@@ -96,11 +97,69 @@ C.EJEMPLOS.flujos.forEach(raw => {
   });
 });
 // Radiografía: los subprocesos van seguidos (ninguno empieza antes de que acabe el anterior)
-const fr = L.sanearFlujo(clon(C.EJEMPLOS.flujos[1]), genId, "x"), dr = L.disponer(fr);
+const fr = L.sanearFlujo(clon(C.EJEMPLOS.flujos.find(x => x.id === "ej-fl-radiografia")), genId, "x"), dr = L.disponer(fr);
 t("bandas de subproceso sin solaparse", dr.bandas.length === 3 && dr.bandas.every((b, i) => i === 0 || b.y >= dr.bandas[i - 1].y + dr.bandas[i - 1].h - 0.1));
 t("vuelta atrás detectada (repite la prueba)", dr.flechas.some(e => e.atras && e.de === "ej-fl-radiografia-p17"));
 t("documento pegado a su actividad, en la misma fila", (() => { const a = dr.nodos.find(x => x.num === 2), b = dr.nodos.find(x => x.num === 3); return Math.abs((a.y + a.h / 2) - (b.y + b.h / 2)) < 1 && b.x > a.x; })());
 t("proceso externo fuera de las calles", (() => { const fx = L.nuevoFlujo(genId(), "x"); L.incorporarPasos(fx, L.leerLista("Enfermera extrae la muestra\nExterno: Laboratorio\nMédico valora el resultado"), genId); const ext = fx.pasos.find(p => p.tipo === "externo"); return !ext.actorId && !L.avisosPasos(fx).some(a => a.paso === ext.id); })());
+
+// ---------- Puntos críticos (entrega 2) ----------
+const fq = L.sanearFlujo(clon(C.EJEMPLOS.flujos.find(x => x.id === "ej-fl-quirofano")), genId, "x");
+t("ejemplos: todos con puntos críticos bien colocados", C.EJEMPLOS.flujos.every(raw => { const fx = L.sanearFlujo(clon(raw), genId, "x"); return fx.puntos.length >= 4 && L.progreso(fx)[5] && !L.avisosPuntos(fx).some(a => a.nivel !== "nota"); }));
+const props = L.propuestasPuntos(fq);
+t("propone traspasos", props.some(x => x.clave.startsWith("tras:")));
+t("propone decisiones", props.some(x => x.clave.startsWith("dec:")));
+t("propone por palabras (verificar, traslado…)", props.some(x => x.clave.startsWith("pal:")));
+const nAntes = props.length, pr = props[0], nuevoP = L.aceptarPropuesta(fq, pr, genId);
+t("aceptar una propuesta crea el punto y la quita de la lista", nuevoP.clave === pr.clave && L.propuestasPuntos(fq).length === nAntes - 1);
+fq.descartes.push(props[1].clave);
+t("descartar quita la propuesta", L.propuestasPuntos(fq).length === nAntes - 2);
+const pFin = L.nuevoPunto(genId(), 99); pFin.pasoId = "ej-fl-quirofano-p15"; pFin.titulo = "Daño al paciente"; fq.puntos.push(pFin);
+const ap = L.avisosPuntos(fq);
+t("aviso: punto en un fin", ap.some(a => a.punto === pFin.id && /fin/.test(a.texto)));
+t("aviso: título que parece un efecto", ap.some(a => a.punto === pFin.id && /efecto/.test(a.texto)));
+t("números de fallo", L.numsFallos("3, 5 y 7, 5").join() === "3,5,7");
+const dq = L.disponer(fq);
+t("iconos: uno por paso con puntos", dq.iconos.length === new Set(fq.puntos.map(x => x.pasoId)).size);
+t("iconos: agrupan los números", dq.iconos.some(ic => ic.nums.length >= 2) || fq.puntos.every((x, i, l) => l.findIndex(y => y.pasoId === x.pasoId) === i));
+t("iconos: dentro del lienzo", dq.iconos.every(ic => ic.x >= 0 && ic.y >= 0 && ic.x + ic.w <= dq.ancho));
+t("puntos por subproceso", L.puntosPorSub(L.sanearFlujo(clon(C.EJEMPLOS.flujos.find(x => x.id === "ej-fl-radiografia")), genId, "x")).length === 3);
+
+// ---------- Calles por turnos ----------
+const dt = L.disponer(fq, { calles: "turno" });
+t("turnos: Enfermería de quirófano sale dos veces, como en el curso", dt.calles.filter(c => c.nombre === "Enfermería de quirófano").length === 2);
+t("turnos: sin solapes", solapes(dt).length === 0);
+t("por actor: una calle por actor", L.disponer(fq).calles.filter(c => c.nombre === "Enfermería de quirófano").length === 1);
+
+// ---------- Retoques ligeros ----------
+const fa = L.sanearFlujo(clon(CONST()), genId, "x"), r0 = L.disponer(fa), p5 = fa.pasos.find(p => p.num === 5);
+p5.ajuste.fila = "2";
+const r1 = L.disponer(fa), filaDe = (d, num) => d.nodos.find(x => x.num === num).fila;
+t("retoque: bajar dos filas", filaDe(r1, 5) === filaDe(r0, 5) + 2 && filaDe(r1, 6) === filaDe(r0, 6) + 2 && solapes(r1).length === 0);
+p5.ajuste.fila = ""; const p9 = fa.pasos.find(p => p.num === 9); p9.ajuste.lado = fa.pasos.find(p => p.num === 7).id;
+const r2 = L.disponer(fa);
+t("retoque: al lado de otro paso (misma fila)", filaDe(r2, 9) === filaDe(r2, 7) && solapes(r2).length === 0);
+
+// ---------- Paquete de intercambio ----------
+const paq = L.paqueteIntercambio([fq, Object.assign(clon(fq), { id: "ej-otro" })], "2026.02", "2026-10-22T00:00:00Z");
+t("intercambio: formato y versión", paq.formato === "flujograma-procesos" && paq.version === 1);
+t("intercambio: nunca los ejemplos", paq.flujos.length === 0);
+const fu2 = Object.assign(clon(fq), { id: "mio" }), paq2 = L.paqueteIntercambio([fu2], "2026.02", "x"), x0 = paq2.flujos[0];
+t("intercambio: pasos con actor y subproceso resueltos", x0.pasos.every(p => typeof p.actor === "string") && x0.pasos.some(p => p.esInicio) && x0.pasos.some(p => p.esFin));
+t("intercambio: puntos con número de paso", x0.puntos.every(x => x.paso == null || Number.isInteger(x.paso)));
+t("intercambio: dibujo con coordenadas", x0.dibujo && x0.dibujo.nodos.length === fu2.pasos.length);
+t("intercambio: se lee", L.leerIntercambio(JSON.parse(JSON.stringify(paq2))).length === 1);
+t("intercambio: versión desconocida → null", L.leerIntercambio(Object.assign({}, paq2, { version: 2 })) === null);
+
+// ---------- draw.io ----------
+C.EJEMPLOS.flujos.forEach(raw => ["vertical", "horizontal"].forEach(o => {
+  const fx = L.sanearFlujo(clon(raw), genId, "x"), x = D.drawio(L.disponer(fx, { orientacion: o }), { titulo: "Proceso " + fx.proceso });
+  const ids = new Set([...x.matchAll(/<mxCell id="([^"]+)"/g)].map(m => m[1]));
+  const refs = [...x.matchAll(/(?:parent|source|target)="([^"]+)"/g)].map(m => m[1]);
+  t(`${raw.id} ${o}: draw.io con referencias válidas`, x.startsWith("<mxfile") && refs.every(r => ids.has(r)));
+  t(`${raw.id} ${o}: draw.io con todos los pasos y flechas`, (x.match(/id="paso-/g) || []).length === fx.pasos.length && (x.match(/edge="1" parent="1" source/g) || []).length === L.flechas(fx).length + L.disponer(fx).uniones.length);
+  t(`${raw.id} ${o}: draw.io sin caracteres sin escapar`, !/value="[^"]*[<>][^"]*"/.test(x));
+}));
 
 // ---------- Saneado ----------
 const sucio = { flujos: [{ id: "a", pasos: [{ id: "p1", num: 1, tipo: "raro", siguientes: [{ a: "p1" }, { a: "noexiste" }, { a: "p2", etiqueta: "si" }], actorId: "fantasma" }, { id: "p2", num: 1, tipo: "decision" }, { id: "p1", num: 3 }], vista: { subprocesos: false } }, "basura"] };

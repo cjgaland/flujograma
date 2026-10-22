@@ -58,7 +58,7 @@
   function nuevoFlujo(id, fecha) {
     return { id, titulo: "", proceso: "", unidad: "", objetivo: "", inicio: "", fin: "", incluye: "", excluye: "", responsable: "", fecha: "",
       actores: [], subprocesos: [], pasos: [], puntos: [], vista: nuevaVista(), marco: { estrategicos: [], soporte: [] },
-      validado: "", edicion: "00", anteriorId: "", tipoEdicion: "actual", control: nuevoControl(), notas: "", creado: fecha, modificado: fecha };
+      validado: "", exportado: "", descartes: [], edicion: "00", anteriorId: "", tipoEdicion: "actual", control: nuevoControl(), notas: "", creado: fecha, modificado: fecha };
   }
   const nuevaVista = () => ({ orientacion: "vertical", calles: "actor", subprocesos: true, letra: "normal", numeros: true, marco: false });
   function nuevoActor(id, nombre = "") { return { id, nombre }; }
@@ -67,7 +67,7 @@
   // con: un documento o unos datos «pegados» a una actividad (se dibujan a su lado).
   function nuevoPaso(id, num, tipo = "actividad") { return { id, num, tipo, texto: "", actorId: "", subprocesoId: "", siguientes: [], con: "", nota: "", ajuste: { fila: "", lado: "" } }; }
   const nuevaFlecha = (a, etiqueta = "", estilo = "normal") => ({ a, etiqueta, estilo });
-  function nuevoPunto(id, num) { return { id, num, pasoId: "", titulo: "", descripcion: "", fallos: [], origen: "manual" }; }
+  function nuevoPunto(id, num) { return { id, num, pasoId: "", titulo: "", descripcion: "", fallos: [], origen: "manual", clave: "" }; }
   function nuevaPersona() { return { nombre: "", cargo: "" }; }
   function nuevoControl() { return { elaborado: [nuevaPersona()], revisado: [nuevaPersona()], aprobado: [nuevaPersona()], historial: [{ edicion: "00", fecha: "", cambio: "Documento inicial" }] }; }
   const siguienteNum = (lista) => lista.reduce((m, x) => Math.max(m, Number(x.num) || 0), 0) + 1;
@@ -196,7 +196,69 @@
     if (P.length > 25 && !f.subprocesos.length) r.push({ nivel: "nota", texto: `Hay ${P.length} pasos. Con tantos, conviene dividir el proceso en subprocesos (paso 2) para que el dibujo se lea por partes.` });
     return r;
   }
-  const avisos = f => ({ 1: avisosProceso(f), 2: avisosActores(f), 3: avisosPasos(f), 4: avisosPasos(f) });
+  const avisos = f => ({ 1: avisosProceso(f), 2: avisosActores(f), 3: avisosPasos(f), 4: avisosPasos(f), 5: avisosPuntos(f) });
+
+  // ---------- Puntos críticos (paso 5) ----------
+  // Dónde suele fallar un proceso (tema 3 y ejercicio 8). Cada propuesta tiene una clave fija para no repetirla
+  // si ya se aceptó (punto.clave) o se descartó (f.descartes).
+  const PALABRAS_RIESGO = [
+    [/identific|pulsera|etiquet|verific/, "Error en la identificación del paciente o de la muestra", "Identificar al paciente es uno de los puntos más críticos de cualquier proceso."],
+    [/medicac|dosis|f[aá]rmaco|prescrib|prescripc|tratamiento/, "Error en la medicación o en la indicación", "Las órdenes de tratamiento y la medicación son fuente frecuente de errores."],
+    [/extrae|extracc|muestra/, "Muestra mal extraída, mal identificada o deteriorada", "Las muestras se pierden, se confunden o se estropean."],
+    [/traslad|transport|acompa/, "Traslado sin acompañamiento, sin información o con demora", "En los traslados el paciente queda sin vigilancia y la información se pierde."],
+    [/registr|anota|mecaniza|historia/, "Registro incompleto, erróneo o que no se hace", "Lo que no se registra no existe para el siguiente profesional."],
+    [/inform|comunic|avis|notific/, "La información no llega, llega tarde o se malinterpreta", "Los fallos de comunicación están detrás de muchos eventos adversos."],
+    [/espera/, "Espera prolongada sin reevaluación", "Durante las esperas el paciente puede empeorar sin que nadie lo note."]
+  ];
+  function propuestasPuntos(f) {
+    const usadas = new Set([...f.descartes, ...f.puntos.map(x => x.clave).filter(Boolean)]), r = [];
+    const add = (clave, pasoId, titulo, motivo) => { if (!usadas.has(clave) && !r.some(x => x.clave === clave)) r.push({ clave, pasoId, titulo, motivo }); };
+    flechas(f).forEach(e => {
+      const a = pasoDe(f, e.de), b = pasoDe(f, e.a), A = actorDe(f, a), B = actorDe(f, b);
+      if (A && B && A.id !== B.id && anexoDe(f, b) !== a) add(`tras:${a.id}:${b.id}`, b.id, `Traspaso de ${A.nombre} a ${B.nombre}: la información o el paciente no llegan bien`, `Aquí el proceso cambia de manos (de ${A.nombre} a ${B.nombre}).`);
+    });
+    f.pasos.forEach(p => {
+      if (p.tipo === "decision") add(`dec:${p.id}`, p.id, `Decisión errónea: ${String(p.texto || "").replace(/[¿?]/g, "").trim() || "sin texto"}`, "Si se decide mal, el paciente va por el camino equivocado.");
+      if (p.tipo === "terminal" || !lleno(p.texto)) return;
+      const t = sinTildes(p.texto), m = PALABRAS_RIESGO.find(([re]) => re.test(t));
+      if (m) add(`pal:${p.id}`, p.id, m[1], m[2]);
+    });
+    return r;
+  }
+  function aceptarPropuesta(f, prop, genId) {
+    const x = nuevoPunto(genId(), siguienteNum(f.puntos));
+    Object.assign(x, { pasoId: prop.pasoId, titulo: prop.titulo, origen: "propuesta", clave: prop.clave });
+    f.puntos.push(x); return x;
+  }
+  const EFECTO_RE = /^(da[nñ]o|lesi[oó]n|muerte|fallecimiento|empeoramiento|insatisfacci[oó]n|ansiedad|reclamaci[oó]n)/;
+  function avisosPuntos(f) {
+    const r = [], ent = entradas(f);
+    if (!f.pasos.length) return [{ nivel: "nota", texto: "Primero escribe los pasos del proceso (paso 3): los puntos críticos se colocan sobre ellos." }];
+    if (!f.puntos.length) r.push({ nivel: "nota", texto: "Aún no hay puntos críticos. Revisa las propuestas o toca un paso del dibujo para marcar uno." });
+    f.puntos.forEach(x => {
+      const etq = `El punto crítico nº ${x.num}`, p = pasoDe(f, x.pasoId);
+      if (!lleno(x.titulo)) r.push({ nivel: "warn", punto: x.id, texto: `${etq} no tiene título: ¿qué puede salir mal?` });
+      if (!p) r.push({ nivel: "warn", punto: x.id, texto: `${etq} no está colocado en ningún paso.` });
+      else if (p.tipo === "terminal" && (esInicio(f, p, ent) || esFin(f, p, ent))) r.push({ nivel: "warn", punto: x.id, texto: `${etq} está en un ${esInicio(f, p, ent) ? "inicio" : "fin"}. ¿No será en el paso ${esInicio(f, p, ent) ? "siguiente" : "anterior"}?` });
+      if (lleno(x.titulo) && !lleno(x.descripcion)) r.push({ nivel: "nota", punto: x.id, texto: `${etq}: describe brevemente el error o el riesgo (como en el ejercicio 8 del AMFE).` });
+      if (EFECTO_RE.test(sinTildes(x.titulo))) r.push({ nivel: "nota", punto: x.id, texto: `${etq} parece un efecto («${corto(x.titulo, 40)}»). Un punto crítico es lo que puede salir mal en el paso; el daño es su consecuencia.` });
+    });
+    if (f.puntos.length && f.subprocesos.length) f.subprocesos.forEach(s => {
+      if (f.pasos.some(p => p.subprocesoId === s.id) && !f.puntos.some(x => { const p = pasoDe(f, x.pasoId); return p && p.subprocesoId === s.id; }))
+        r.push({ nivel: "nota", texto: `El subproceso «${corto(s.nombre || "sin nombre", 40)}» no tiene ningún punto crítico. ¿De verdad no puede fallar nada en él?` });
+    });
+    return r;
+  }
+  // Puntos críticos por subproceso, en el orden del proceso (tabla del ejercicio 8)
+  function puntosPorSub(f) {
+    const orden = new Map(f.pasos.map((p, i) => [p.id, i]));
+    const l = f.puntos.slice().sort((a, b) => (orden.get(a.pasoId) ?? 1e9) - (orden.get(b.pasoId) ?? 1e9) || a.num - b.num);
+    const grupos = f.subprocesos.map(s => ({ sub: s, puntos: l.filter(x => { const p = pasoDe(f, x.pasoId); return p && p.subprocesoId === s.id; }) }));
+    const resto = l.filter(x => { const p = pasoDe(f, x.pasoId); return !p || !f.subprocesos.some(s => s.id === p.subprocesoId); });
+    if (resto.length) grupos.push({ sub: null, puntos: resto });
+    return grupos.filter(g => g.puntos.length);
+  }
+  const numsFallos = txt => [...new Set(String(txt || "").match(/\d+/g) || [])].slice(0, 40);
   const errores = f => avisosPasos(f).filter(a => a.nivel === "error");
 
   // ---------- Progreso y «tu siguiente paso» ----------
@@ -208,8 +270,8 @@
       2: f.actores.some(a => lleno(a.nombre)),
       3: pasosOk,
       4: pasosOk && lleno(f.validado),
-      5: pasosOk && f.puntos.some(x => lleno(x.titulo)),
-      6: false
+      5: pasosOk && f.puntos.some(x => lleno(x.titulo)) && f.puntos.every(x => lleno(x.titulo) && pasoDe(f, x.pasoId)),
+      6: pasosOk && lleno(f.exportado)
     };
   }
   function pasoPendiente(f, entrega) {
@@ -221,8 +283,8 @@
     2: () => "Di quién interviene: cada profesional o servicio será una calle del dibujo.",
     3: f => f.pasos.length ? "Revisa los pasos: el validador te dice qué falta (inicio, fin, salidas de las decisiones…)." : "Escribe los pasos del proceso, o pega una lista: la app los encadena y dibuja el flujograma.",
     4: () => "Mira el dibujo, revísalo con el equipo y márcalo como validado.",
-    5: () => "Marca los puntos críticos: dónde puede fallar el proceso.",
-    6: () => "Descarga el flujograma."
+    5: f => f.puntos.length ? "Completa los puntos críticos: cada uno con su título, su descripción y el paso donde está." : "Marca los puntos críticos: dónde puede fallar el proceso. La app te propone dónde buscar.",
+    6: () => "Descarga el flujograma en imagen, PDF o draw.io."
   };
   function siguientePaso(datos, entrega) {
     const L = datos.flujos;
@@ -230,7 +292,7 @@
     const f = L.slice().sort((x, y) => String(y.modificado).localeCompare(String(x.modificado)))[0];
     const p = pasoPendiente(f, entrega), nom = corto(f.titulo || f.proceso || "tu flujograma", 50);
     if (p) return { k: "paso" + p.n, texto: `«${nom}»: ${TEXTO_PASO[p.n](f)}`, href: `#/flujo/${f.id}/${p.n}`, btn: `Ir al paso ${p.n}` };
-    return { k: "listo", texto: `«${nom}» está dibujado y validado. Pronto podrás marcar los puntos críticos y descargarlo en imagen, PDF, Word y draw.io.`, href: `#/flujo/${f.id}/4`, btn: "Ver el dibujo" };
+    return { k: "listo", texto: `«${nom}» está dibujado, validado y con sus puntos críticos. Es el punto de partida del AMFE: cada punto crítico es un candidato a modo de fallo.`, href: `#/flujo/${f.id}/6`, btn: "Ir a exportar" };
   }
   function resumen(f) {
     const ent = entradas(f);
@@ -486,6 +548,9 @@
     const E = flechas(f), ent = entradas(f);
     const sal = new Map(P.map(p => [p.id, []])); E.forEach(e => sal.get(e.de).push(e));
     const anexo = new Map(); P.forEach(p => { const h = anexoDe(f, p); if (h && !anexoDe(f, h)) anexo.set(p.id, h.id); });
+    // Retoques ligeros: «al lado de» otro paso (misma fila) y filas de más hacia abajo
+    const lado = new Map(); P.forEach(p => { const l = p.ajuste && byId.get(p.ajuste.lado); if (l && l.id !== p.id && !anexo.has(p.id) && !(l.ajuste && l.ajuste.lado)) lado.set(p.id, l.id); });
+    const extra = p => { const n = parseInt(p.ajuste && p.ajuste.fila, 10); return Number.isFinite(n) ? Math.max(0, Math.min(9, n)) : 0; };
 
     // 1. Flechas que vuelven atrás (rompen los ciclos): búsqueda en profundidad desde los inicios, en el orden de la tabla
     const estado = new Map(), atras = new Set();
@@ -517,24 +582,40 @@
         let r = 0;
         (ent.get(p.id) || []).forEach(e => { if (adelante(e)) r = Math.max(r, fila.get(e.de) + 1); });
         const si = subDeP(p); if (si >= 0) r = Math.max(r, inicioBanda[si]);
+        r += extra(p);
         if (anexo.has(p.id)) r = fila.get(anexo.get(p.id));
+        else if (lado.has(p.id)) r = fila.get(lado.get(p.id));
         if (r !== fila.get(p.id)) { fila.set(p.id, r); cambio = true; }
       });
     }
     // Las filas vacías se cierran (puede pasar al empujar subprocesos)
+    // (salvo si hay retoques de «bajar una fila»: ese hueco es a propósito)
     const usadas = [...new Set(fila.values())].sort((a, b) => a - b), comp = new Map(usadas.map((r, i) => [r, i]));
-    P.forEach(p => fila.set(p.id, comp.get(fila.get(p.id))));
-    const nFilas = usadas.length;
+    if (!P.some(p => extra(p))) P.forEach(p => fila.set(p.id, comp.get(fila.get(p.id))));
+    const nFilas = Math.max(0, ...fila.values()) + 1;
 
     // 3. Calles: una por actor, más «Inicio» (a la izquierda) y «Fin» (a la derecha) para los terminales sin actor
+    // Por turnos (como las soluciones del curso): cada vez que el proceso vuelve a un actor, una calle nueva.
+    // Un turno = pasos seguidos del mismo actor unidos por flechas hacia delante.
+    const turno = new Map();
+    if (V.calles === "turno") {
+      const padre = new Map(P.map(p => [p.id, p.id])), raizDe = x => { while (padre.get(x) !== x) { padre.set(x, padre.get(padre.get(x))); x = padre.get(x); } return x; };
+      E.forEach(e => { const a = byId.get(e.de), b = byId.get(e.a); if (!atras.has(e) && actorDe(f, a) && a.actorId === b.actorId) padre.set(raizDe(a.id), raizDe(b.id)); });
+      P.forEach(p => { if (anexo.has(p.id) && byId.get(anexo.get(p.id)).actorId === p.actorId) padre.set(raizDe(p.id), raizDe(anexo.get(p.id))); });
+      const grupos = new Map(); P.filter(p => actorDe(f, p)).forEach(p => { const k = raizDe(p.id); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(p); });
+      const ordenG = [...grupos.values()].map(l => ({ l, r: Math.min(...l.map(p => fila.get(p.id))), a: f.actores.findIndex(x => x.id === l[0].actorId) })).sort((x, y) => x.r - y.r || x.a - y.a);
+      ordenG.forEach((g, i) => g.l.forEach(p => turno.set(p.id, `${p.actorId}#${i}`)));
+    }
     const calleDe = p => {
+      if (turno.has(p.id)) return turno.get(p.id);
       if (actorDe(f, p)) return p.actorId;
       if (p.tipo === "terminal") return esInicio(f, p, ent) ? "_in" : "_out";
       if (p.tipo === "externo") return "_ext";
       return "_sin";
     };
     const claves = new Set(P.map(calleDe));
-    const ordenCalles = ["_in", ...f.actores.map(a => a.id), "_sin", "_ext", "_out"].filter(k => claves.has(k));
+    const turnosOrden = [...new Set([...turno.values()])].sort((x, y) => Number(x.split("#")[1]) - Number(y.split("#")[1]));
+    const ordenCalles = ["_in", ...(turno.size ? turnosOrden : f.actores.map(a => a.id)), "_sin", "_ext", "_out"].filter(k => claves.has(k));
 
     // 4. Huecos dentro de cada calle: cada paso, bajo su paso anterior; si dos coinciden, uno al lado del otro (el Sí antes que el No)
     const hueco = new Map(), huecosCalle = new Map(ordenCalles.map(k => [k, 1]));
@@ -543,7 +624,9 @@
       ordenCalles.forEach(k => {
         const aqui = P.filter(p => fila.get(p.id) === r && calleDe(p) === k);
         if (!aqui.length) return;
-        const principales = aqui.filter(p => !anexo.has(p.id)).map(p => {
+        const pegado = y => anexo.has(y.id) || (lado.has(y.id) && calleDe(byId.get(lado.get(y.id))) === k && aqui.some(z => z.id === lado.get(y.id)));
+        const pegadoA = y => anexo.get(y.id) || lado.get(y.id);
+        const principales = aqui.filter(p => !pegado(p)).map(p => {
           const e = (ent.get(p.id) || []).filter(adelante).find(x => calleDe(byId.get(x.de)) === k && hueco.has(x.de));
           return { p, deseado: e ? hueco.get(e.de) : 0, peso: pesoEtq(e), i: idx.get(p.id) };
         }).sort((a, b) => a.deseado - b.deseado || a.peso - b.peso || a.i - b.i);
@@ -551,7 +634,7 @@
         const colocar = (p, d) => { const s = Math.max(d, ult + 1); hueco.set(p.id, s); ult = s; };
         principales.forEach(x => {
           colocar(x.p, x.deseado);
-          aqui.filter(y => anexo.get(y.id) === x.p.id).forEach(y => colocar(y, hueco.get(x.p.id) + 1));
+          aqui.filter(y => pegado(y) && pegadoA(y) === x.p.id).forEach(y => colocar(y, hueco.get(x.p.id) + 1));
         });
         aqui.filter(y => !hueco.has(y.id)).forEach(y => colocar(y, 0));
         huecosCalle.set(k, Math.max(huecosCalle.get(k), ult + 1));
@@ -567,7 +650,7 @@
     const calles = []; let u = U0;
     ordenCalles.forEach(k => {
       const n = huecosCalle.get(k), ancho = GU + n * (CU + GU);
-      const a = f.actores.find(x => x.id === k);
+      const a = f.actores.find(x => x.id === k.split("#")[0]);
       calles.push({ clave: k, actorId: a ? a.id : "", nombre: a ? a.nombre : k === "_sin" ? "Sin asignar" : "", pseudo: k === "_in" || k === "_out" || k === "_ext", u0: u, ancho, huecos: n });
       u += ancho;
     });
@@ -677,8 +760,42 @@
       const r = vertical ? { x: DIB.MARGEN, y: v1, w: anchoU - 2 * DIB.MARGEN, h: v2 - v1 } : { x: v1, y: DIB.MARGEN, w: v2 - v1, h: anchoU - 2 * DIB.MARGEN };
       return Object.assign({ subprocesoId: s.id, nombre: s.nombre, color: COLOR_SUB_HEX[Number(s.color) || 0], orden: i + 1 }, r);
     }).filter(Boolean);
+    // Puntos críticos: un aviso por paso, con sus números, en la esquina superior derecha (como el Documento Final)
+    const iconos = [];
+    nodos.forEach(n => {
+      const l = (f.puntos || []).filter(x => x.pasoId === n.pasoId).sort((a, b) => a.num - b.num); if (!l.length) return;
+      const nums = l.map(x => x.num), txtN = nums.join(", "), w = 26 + txtN.length * 6.6 + 8, h = 20;
+      const x = n.tipo === "decision" ? n.x + n.w * 0.62 : n.x + n.w - w + 10, y = n.tipo === "decision" ? n.y + n.h * 0.1 - h / 2 : n.y - h + 6;
+      iconos.push({ pasoId: n.pasoId, x, y, w, h, nums, texto: txtN, fallos: [...new Set(l.flatMap(p => p.fallos || []))] });
+    });
     const [ancho, alto] = vertical ? [anchoU, largoV] : [largoV, anchoU];
-    return { version: 1, orientacion: vertical ? "vertical" : "horizontal", letra: grande ? "grande" : "normal", ancho: Math.ceil(ancho), alto: Math.ceil(alto), cabecera: vertical ? DIB.CABV : DIB.CABH, banda: hayBandas ? DIB.BANDA : 0, calles: callesD, bandas, nodos, flechas: flechasD, uniones, iconos: [] };
+    return { version: 1, orientacion: vertical ? "vertical" : "horizontal", letra: grande ? "grande" : "normal", ancho: Math.ceil(ancho), alto: Math.ceil(alto), cabecera: vertical ? DIB.CABV : DIB.CABH, banda: hayBandas ? DIB.BANDA : 0, calles: callesD, bandas, nodos, flechas: flechasD, uniones, iconos };
+  }
+
+  // ---------- Paquete de intercambio «flujograma-procesos» (para «Traer de Flujograma» en AMFE y Mapa de Riesgos) ----------
+  // Forma FIJA y versionada (Diseño, 7.3): las otras apps leen esto, nunca «flujograma-datos». Añadir campos no sube la
+  // versión; quitar o cambiar el significado de uno sí (y entonces se escriben las dos versiones durante un tiempo).
+  const FORMATO_INTERCAMBIO = "flujograma-procesos", VERSION_INTERCAMBIO = 1;
+  function paqueteIntercambio(flujos, appVersion, fecha) {
+    return {
+      formato: FORMATO_INTERCAMBIO, version: VERSION_INTERCAMBIO, app: "flujograma", appVersion, generado: fecha,
+      flujos: flujos.filter(f => !/^ej-/.test(f.id)).map(f => {
+        const ent = entradas(f), nomA = id => { const a = f.actores.find(x => x.id === id); return a ? a.nombre : ""; }, nomS = id => { const s = f.subprocesos.find(x => x.id === id); return s ? s.nombre : ""; };
+        return {
+          id: f.id, titulo: f.titulo, proceso: f.proceso, unidad: f.unidad, objetivo: f.objetivo, inicio: f.inicio, fin: f.fin, fecha: f.fecha, edicion: f.edicion, tipoEdicion: f.tipoEdicion, validado: f.validado,
+          actores: f.actores.map((a, i) => ({ id: a.id, orden: i + 1, nombre: a.nombre })),
+          subprocesos: f.subprocesos.map((s, i) => ({ id: s.id, orden: i + 1, nombre: s.nombre, descripcion: s.descripcion, inicio: s.inicio, fin: s.fin, roles: s.roles, origen: s.origenApp ? { app: s.origenApp, id: s.origenId } : null })),
+          pasos: f.pasos.map(p => ({ id: p.id, num: p.num, tipo: p.tipo, esInicio: esInicio(f, p, ent), esFin: esFin(f, p, ent), texto: p.texto, actorId: p.actorId, actor: nomA(p.actorId), subprocesoId: p.subprocesoId, subproceso: nomS(p.subprocesoId), siguientes: p.siguientes.filter(s => pasoDe(f, s.a)).map(s => ({ a: s.a, etiqueta: s.etiqueta, estilo: s.estilo })), con: p.con || null })),
+          puntos: f.puntos.map(x => { const p = pasoDe(f, x.pasoId); return { id: x.id, num: x.num, pasoId: p ? p.id : null, paso: p ? p.num : null, subprocesoId: p ? p.subprocesoId : "", subproceso: p ? nomS(p.subprocesoId) : "", titulo: x.titulo, descripcion: x.descripcion, fallos: (x.fallos || []).map(Number).filter(Number.isFinite) }; }),
+          dibujo: disponer(f)
+        };
+      })
+    };
+  }
+  // Lo que hará la app que lo lee: comprobar formato y versión, y quedarse solo con flujogramas bien formados
+  function leerIntercambio(o) {
+    if (!o || typeof o !== "object" || o.formato !== FORMATO_INTERCAMBIO || o.version !== VERSION_INTERCAMBIO || !Array.isArray(o.flujos)) return null;
+    return o.flujos.filter(x => x && typeof x === "object" && Array.isArray(x.pasos) && Array.isArray(x.puntos));
   }
 
   // ---------- Saneado por esquema (lo que se carga o se importa nunca se usa sin pasar por aquí) ----------
@@ -692,7 +809,7 @@
     flecha: { a: "ref", etiqueta: [30], estilo: { en: ["normal", "idavuelta"] } },
     ajuste: { fila: [3], lado: "ref" },
     paso: { id: "id", num: "ent", tipo: { en: ORDEN_TIPOS }, texto: [300], actorId: "ref", subprocesoId: "ref", siguientes: { de: "flecha", max: 8 }, con: "ref", nota: [1000], ajuste: { obj: "ajuste" } },
-    punto: { id: "id", num: "ent", pasoId: "ref", titulo: [300], descripcion: [1500], fallos: { lista: 6, max: 40 }, origen: { en: ["manual", "propuesta", "amfe"] } },
+    punto: { id: "id", num: "ent", pasoId: "ref", titulo: [300], descripcion: [1500], fallos: { lista: 6, max: 40 }, origen: { en: ["manual", "propuesta", "amfe"] }, clave: [80] },
     vista: { orientacion: { en: ["vertical", "horizontal"] }, calles: { en: ["actor", "turno"] }, subprocesos: "b", letra: { en: ["normal", "grande"] }, numeros: "b", marco: "b" },
     marco: { estrategicos: { lista: 120, max: 12 }, soporte: { lista: 120, max: 16 } },
     persona: { nombre: [200], cargo: [200] },
@@ -700,7 +817,7 @@
     control: { elaborado: { de: "persona", max: 10 }, revisado: { de: "persona", max: 10 }, aprobado: { de: "persona", max: 10 }, historial: { de: "revision", max: 50 } },
     flujo: { id: "id", titulo: [200], proceso: [300], unidad: [200], objetivo: [2000], inicio: [300], fin: [300], incluye: [2000], excluye: [2000], responsable: [300], fecha: [40],
       actores: { de: "actor", max: 30 }, subprocesos: { de: "subproceso", max: 30 }, pasos: { de: "paso", max: 400 }, puntos: { de: "punto", max: 300 },
-      vista: { obj: "vista" }, marco: { obj: "marco" }, validado: [40], edicion: [4], anteriorId: "ref", tipoEdicion: { en: ["actual", "propuesto"] }, control: { obj: "control" }, notas: [3000], creado: [40], modificado: [40] }
+      vista: { obj: "vista" }, marco: { obj: "marco" }, validado: [40], exportado: [40], descartes: { lista: 80, max: 400 }, edicion: [4], anteriorId: "ref", tipoEdicion: { en: ["actual", "propuesto"] }, control: { obj: "control" }, notas: [3000], creado: [40], modificado: [40] }
   };
   const FABRICA = { actor: id => nuevoActor(id), subproceso: id => nuevoSubproceso(id), flecha: () => nuevaFlecha(""), ajuste: () => ({ fila: "", lado: "" }), paso: id => nuevoPaso(id, 0), punto: id => nuevoPunto(id, 0),
     vista: nuevaVista, marco: () => ({ estrategicos: [], soporte: [] }), persona: nuevaPersona, revision: () => ({ edicion: "", fecha: "", cambio: "" }), control: () => ({ elaborado: [], revisado: [], aprobado: [], historial: [] }), flujo: id => nuevoFlujo(id, "") };
@@ -765,6 +882,8 @@
     flechas, entradas, papelTerminal, esInicio, esFin, anexoDe, alcanzables, llegaAFin,
     avisosProceso, avisosActores, avisosPasos, avisos, errores, rolesSinCalle,
     progreso, pasoPendiente, siguientePaso, resumen,
+    PALABRAS_RIESGO, propuestasPuntos, aceptarPropuesta, avisosPuntos, puntosPorSub, numsFallos,
+    FORMATO_INTERCAMBIO, VERSION_INTERCAMBIO, paqueteIntercambio, leerIntercambio,
     adivinarActor, leerLista, leerTabla, leerPegado, incorporarPasos,
     insertarDespues, quitarPaso, cambiarTipo, ponerSalida, anadirActores,
     partir, medida, disponer,

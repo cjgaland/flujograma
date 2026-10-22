@@ -1404,3 +1404,28 @@ body.modo-reunion table.mini { font-size: 16px; }
 .leyenda-wrap { overflow-x: auto; margin: 10px 0; padding: 6px; border-radius: var(--radius); background: #fff; border: 1px solid var(--border); }
 .leyenda-wrap svg { display: block; max-width: none; }
 @media print { .lienzo { max-height: none; overflow: visible; border: 0; } }
+
+/* Puntos críticos (paso 5) */
+.pc-num { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px; background: #e51400; color: #ffff00; font-size: 12.5px; font-weight: 800; }
+.punto-card { --sc: #e51400; }
+.prop-lista { display: grid; gap: 8px; margin: 8px 0; }
+.prop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-radius: var(--radius-lg); border: 1px dashed var(--border-lite); background: var(--bg-2); }
+.prop-txt { flex: 1 1 260px; min-width: 0; display: grid; gap: 2px; }
+.prop-txt b { font-size: 14.5px; line-height: 1.3; }
+.prop-txt span { font-size: 12.5px; color: var(--text-2); }
+.prop-acc { display: flex; align-items: center; gap: 6px; }
+.retoque { margin-top: 10px; }
+.grupo-t .sub-dot { margin-right: 2px; }
+
+/* Exportar (paso 6) */
+.export-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 12px 0; }
+.export-card { margin: 0; display: flex; flex-direction: column; }
+.export-card .toolbar { margin-top: auto; }
+.export-card--prox { opacity: .65; }
+.btn--on { border-color: var(--cyan); color: var(--cyan); }
+
+/* Vista para imprimir */
+.informe-dib { overflow-x: auto; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; }
+.informe-dib svg { display: block; width: 100%; height: auto; }
+body.ver-informe .informe-dib svg { max-height: 175mm; }
+@media print { .informe-dib { border: 0; padding: 0; overflow: visible; break-inside: avoid; } .informe-dib svg { max-height: 175mm; } }
