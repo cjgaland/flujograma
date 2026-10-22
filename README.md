@@ -12,7 +12,8 @@ Seis pasos:
 6. Imagen (PNG, SVG), PDF, Word, Excel y archivo de draw.io para retocarlo.
 
 - Validador de los errores habituales: sin inicio o sin fin, callejones sin salida, decisiones sin Sí o sin No…
-- **Aprende**, **glosario** y **ejemplos**: la atención en Urgencias (con el marco de procesos y los fallos del AMFE) y los cinco procesos del ejercicio 5 del curso, con sus puntos críticos.
+- Vista recorrido paso a paso, modo reunión para proyectar, ediciones (proceso actual y propuesto, con comparación) y hoja en blanco para trabajar en papel.
+- **Aprende** (siete temas), **Ponte a prueba** (preguntas y cuatro ejercicios), **glosario** y **ejemplos**: la atención en Urgencias (con el marco de procesos y los fallos del AMFE) y los cinco procesos del ejercicio 5 del curso, con sus puntos críticos, y tres minicasos con errores para corregir.
 - «Traer de AMFE»: el proceso, los subprocesos, quién interviene y los fallos prioritarios como puntos críticos.
 - Paquete «flujograma-procesos» para que AMFE y Mapa de Riesgos puedan traer el flujograma.
 
