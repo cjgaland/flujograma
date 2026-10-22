@@ -75,10 +75,11 @@ L.ponerSalida(p1, "no", i0.id); t("poner salida No", p1.siguientes.some(s => s.e
 L.cambiarTipo(p1, "actividad"); t("dejar de ser decisión quita etiquetas", p1.siguientes.every(s => !s.etiqueta));
 
 // ---------- Ejemplos: saneado, validador y colocación ----------
+const esMini = raw => /^ej-fl-mini-/.test(raw.id);
 C.EJEMPLOS.flujos.forEach(raw => {
   const fx = L.sanearFlujo(clon(raw), genId, "x");
   t(`${raw.id}: el saneado conserva todo`, fx.pasos.length === raw.pasos.length && fx.pasos.every((p, i) => p.siguientes.length === raw.pasos[i].siguientes.length));
-  t(`${raw.id}: sin errores ni avisos`, L.avisosPasos(fx).filter(a => a.nivel !== "nota").length === 0);
+  if (!esMini(raw)) t(`${raw.id}: sin errores ni avisos`, L.avisosPasos(fx).filter(a => a.nivel !== "nota").length === 0);
   ["vertical", "horizontal"].forEach(o => {
     ["normal", "grande"].forEach(letra => {
       const d = L.disponer(fx, { orientacion: o, letra });
@@ -105,7 +106,7 @@ t("proceso externo fuera de las calles", (() => { const fx = L.nuevoFlujo(genId(
 
 // ---------- Puntos críticos (entrega 2) ----------
 const fq = L.sanearFlujo(clon(C.EJEMPLOS.flujos.find(x => x.id === "ej-fl-quirofano")), genId, "x");
-t("ejemplos: todos con puntos críticos bien colocados", C.EJEMPLOS.flujos.every(raw => { const fx = L.sanearFlujo(clon(raw), genId, "x"); return fx.puntos.length >= 4 && L.progreso(fx)[5] && !L.avisosPuntos(fx).some(a => a.nivel !== "nota"); }));
+t("ejemplos: todos con puntos críticos bien colocados", C.EJEMPLOS.flujos.filter(raw => !esMini(raw)).every(raw => { const fx = L.sanearFlujo(clon(raw), genId, "x"); return fx.puntos.length >= 4 && L.progreso(fx)[5] && !L.avisosPuntos(fx).some(a => a.nivel !== "nota"); }));
 const props = L.propuestasPuntos(fq);
 t("propone traspasos", props.some(x => x.clave.startsWith("tras:")));
 t("propone decisiones", props.some(x => x.clave.startsWith("dec:")));
@@ -209,6 +210,35 @@ t("Excel: una fila por paso y por punto", hx.hojas[0].filas.length === 3 + fU.pa
 t("Excel: cabecera que AMFE reconoce al pegar", ["Subproceso", "Error o punto crítico"].every(c => hx.hojas[1].filas[2].some(x => x.texto === c)));
 t("Excel: se construye", X.construirLibroXlsx(hx).length > 3000);
 if (process.env.GUARDAR) { require("fs").writeFileSync(process.env.GUARDAR + "/prueba.docx", bytesU); require("fs").writeFileSync(process.env.GUARDAR + "/prueba.xlsx", X.construirLibroXlsx(hx)); }
+
+// ---------- Entrega 4: minicasos, test, ediciones y recorrido ----------
+const mini = id => L.sanearFlujo(clon(C.EJEMPLOS.flujos.find(x => x.id === id)), genId, "x");
+const avM = id => L.avisosPasos(mini(id)).map(a => a.texto).join(" | ");
+t("minicaso medicación: decisión sin No", /falta la salida del No/.test(avM("ej-fl-mini-medicacion")));
+t("minicaso interconsulta: paso al que no se llega", /no se llega a él/.test(avM("ej-fl-mini-interconsulta")));
+t("minicaso interconsulta: callejón sin salida", /callejón/.test(avM("ej-fl-mini-interconsulta")));
+t("minicaso curas: documento escrito como actividad", /parece un papel/.test(avM("ej-fl-mini-curas")));
+t("minicaso curas: decisión sin pregunta", /escríbela como pregunta/.test(avM("ej-fl-mini-curas")));
+t("Encuentra el error: cada minicaso existe y tiene respuesta", C.ERRORES.every(x => C.EJEMPLOS.flujos.some(y => y.id === x.flujo) && x.o[x.ok]));
+t("test: 15 preguntas, 7 del curso", C.TEST.length === 15 && C.TEST.filter(q => q.t === "curso").length === 7);
+t("test: respuesta correcta válida y tema de Aprende que existe", C.TEST.every(q => q.o[q.ok] && C.TEMAS.some(x => x.n === q.aprende) && C.TEMAS_TEST[q.t]));
+t("Aprende: 7 temas", C.TEMAS.length === 7 && C.TEMAS.every((x, i) => x.n === i + 1));
+t("ejercicio símbolos: tipos válidos", C.EJERCICIOS.simbolos.every(x => L.TIPOS[x.tipo]));
+t("ejercicio puntos: el ejemplo tiene puntos críticos", mini(C.EJERCICIOS.puntos.flujo).puntos.length >= 3);
+const e0 = L.sanearFlujo(clon(CONST()), genId, "x"), e1 = L.nuevaEdicion(e0, genId, "2026-10-22T10:00:00Z", "propuesto");
+t("edición: número, tipo y referencia a la anterior", e1.edicion === "01" && e1.tipoEdicion === "propuesto" && e1.anteriorId === e0.id && e1.id !== e0.id && !e1.validado);
+t("edición: añade una línea al histórico", e1.control.historial.length === e0.control.historial.length + 1);
+const pNuevo = L.nuevoPaso(genId(), 99); pNuevo.texto = "Doble verificación de valores"; L.insertarDespues(e1, e1.pasos.find(p => p.num === 5), pNuevo);
+e1.pasos.find(p => p.num === 9).texto = "Avisa al facultativo por el busca"; L.quitarPaso(e1, e1.pasos.find(p => p.num === 8).id);
+const cmp = L.compararEdiciones(e0, e1);
+t("comparar: un paso nuevo", cmp.nuevos.length === 1 && cmp.nuevos[0].texto.startsWith("Doble"));
+t("comparar: un paso quitado", cmp.quitados.length === 1 && cmp.quitados[0].num === 8);
+t("comparar: pasos cambiados (texto y flechas)", cmp.cambiados.some(c => c.paso.num === 9 && c.cambios.some(x => x.startsWith("texto"))) && cmp.cambiados.some(c => c.cambios.includes("cambian las flechas")));
+t("comparar: sin cambios, vacío", (() => { const c = L.compararEdiciones(e0, L.nuevaEdicion(e0, genId, "x")); return !c.nuevos.length && !c.quitados.length && !c.cambiados.length; })());
+t("recorrido: empieza en el inicio", L.primerPaso(e0).num === 1);
+t("recorrido: salidas de una decisión, Sí primero", L.salidasDe(e0, e0.pasos.find(p => p.num === 6)).map(x => x.s.etiqueta).join() === "si,no");
+t("recorrido: de dónde viene un paso", L.entradasDe(e0, e0.pasos.find(p => p.num === 10)).map(p => p.num).sort((a, b) => a - b).join() === "8,9");
+t("hoja en blanco: una calle por actor", (D.callesEnBlanco(["A", "B", "C"]).match(/stroke-dasharray/g) || []).length === 6);
 
 // ---------- Saneado ----------
 const sucio = { flujos: [{ id: "a", pasos: [{ id: "p1", num: 1, tipo: "raro", siguientes: [{ a: "p1" }, { a: "noexiste" }, { a: "p2", etiqueta: "si" }], actorId: "fantasma" }, { id: "p2", num: 1, tipo: "decision" }, { id: "p1", num: 3 }], vista: { subprocesos: false } }, "basura"] };

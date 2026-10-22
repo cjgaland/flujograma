@@ -88,7 +88,7 @@
     });
     // Símbolos
     d.nodos.forEach(n => {
-      const halo = marcar.has(n.pasoId) ? "#dc2626" : opc.sel === n.pasoId ? "#4f46e5" : "";
+      const halo = marcar.has(n.pasoId) ? "#dc2626" : opc.sel === n.pasoId ? "#4f46e5" : opc.nuevos && opc.nuevos.has(n.pasoId) ? "#16a34a" : opc.cambiados && opc.cambiados.has(n.pasoId) ? "#d97706" : opc.elegidos && opc.elegidos.has(n.pasoId) ? "#e51400" : "";
       p.push(`<g class="fl-nodo" data-paso="${esc(n.pasoId)}"${opc.accesible ? ` tabindex="0" role="button" aria-label="Paso ${n.num}: ${esc(n.texto)}"` : ""}>`);
       if (halo) p.push(`<rect x="${r1(n.x - 6)}" y="${r1(n.y - 6)}" width="${n.w + 12}" height="${n.h + 12}" rx="10" fill="${halo}" fill-opacity=".10" stroke="${halo}" stroke-width="2.2"/>`);
       p.push(forma(n), texto(n, tam));
@@ -208,7 +208,20 @@
     return `<mxfile host="app.diagrams.net" agent="Flujograma" version="24.0.0">\n  <diagram name="${xa(opc.titulo || "Flujograma")}" id="${xa(opc.id || "flujograma")}">\n    <mxGraphModel dx="${ancho}" dy="${alto}" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="${ancho}" pageHeight="${alto}" math="0" shadow="0">\n      <root>\n        <mxCell id="0" />\n        <mxCell id="1" parent="0" />\n        ${c.join("\n        ")}\n      </root>\n    </mxGraphModel>\n  </diagram>\n</mxfile>\n`;
   }
 
-  const API = { svg, leyenda, drawio, COLORES: COL };
+  // Hoja en blanco para dibujar en papel (mejora J): calles vacías con su nombre
+  function callesEnBlanco(nombres, ancho = 1000, alto = 560) {
+    const n = Math.max(1, nombres.length), w = (ancho - 20) / n, p = [];
+    p.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${ancho} ${alto}" width="${ancho}" height="${alto}" font-family="Arial, Helvetica, sans-serif" role="img" aria-label="Calles en blanco">`, `<rect width="${ancho}" height="${alto}" fill="#fff"/>`);
+    for (let i = 0; i < n; i++) {
+      const x = 10 + i * w;
+      p.push(`<rect x="${r1(x + 2)}" y="10" width="${r1(w - 4)}" height="${alto - 20}" rx="6" fill="none" stroke="${CALLE}" stroke-dasharray="5 4"/><rect x="${r1(x + 2)}" y="10" width="${r1(w - 4)}" height="26" rx="6" fill="${CALLE_CAB}" stroke="${CALLE}" stroke-dasharray="5 4"/>`);
+      if (nombres[i]) p.push(`<text x="${r1(x + w / 2)}" y="23" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="700" fill="${TINTA}">${esc(recorta(nombres[i], Math.floor((w - 12) / 7)))}</text>`);
+    }
+    p.push(`</svg>`);
+    return p.join("");
+  }
+
+  const API = { svg, leyenda, drawio, callesEnBlanco, COLORES: COL };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   else raiz.Dibujo = API;
 })(typeof window !== "undefined" ? window : this);

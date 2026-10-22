@@ -102,8 +102,59 @@
         { t: "Del punto crítico al mapa de riesgos", h: `<p>Cuando el AMFE puntúa los fallos, cada punto crítico se puede enlazar con los números de esos fallos. Así el mapa de riesgos dibuja sobre el flujograma un aviso con los números (en Urgencias, «3, 5, 7» sobre Recepción), coloreado según su prioridad.</p>` }
       ],
       minicaso: `<p>En la petición de radiografía, el celador recibe el aviso y va a buscar al paciente. Si el paciente <b>no lleva pulsera</b>, no puede comprobar quién es: punto crítico «Paciente no identificado (sin pulsera)», en el paso «¿Paciente verificado?». Su efecto, en el AMFE: prueba al paciente equivocado.</p>`,
-      practica: { texto: "Ver los puntos críticos de la radiografía", href: "#/flujo/ej-fl-radiografia/5" } }
+      practica: { texto: "Ver los puntos críticos de la radiografía", href: "#/flujo/ej-fl-radiografia/5" } },
+
+    { n: 7, c: "A", titulo: "Del flujograma al AMFE y al mapa de riesgos", sub: "Para qué sirve todo esto después",
+      minuto: [
+        "El flujograma validado y sus puntos críticos son la <b>primera sesión del AMFE</b>: «proceso y puntos críticos».",
+        "Cada punto crítico es un candidato a <b>modo de fallo</b>; el AMFE le añade su efecto, su causa y su puntuación (IPR).",
+        "El <b>mapa de riesgos</b> es el flujograma con los fallos del AMFE marcados encima, dentro del marco de procesos estratégicos, clave y de soporte.",
+        "Tras las acciones de mejora se dibuja el <b>proceso propuesto</b> y se revisa el mapa periódicamente, sobre todo tras cambios o incidentes."],
+      secciones: [
+        { t: "El camino completo", h: `<ol><li><b>Flujograma</b> del proceso, validado con el equipo (esta app).</li><li><b>Puntos críticos</b> sobre el flujograma.</li><li><b>AMFE</b>: modo de fallo, efecto, causa, gravedad, ocurrencia, detección e IPR (app AMFE).</li><li><b>Priorizar</b> y proponer <b>acciones de mejora</b>.</li><li><b>Mapa de riesgos</b>: el flujograma con los avisos de los fallos, coloreados por su prioridad.</li><li><b>Proceso propuesto</b> y revisión periódica.</li></ol>
+          ${box("practica", "En la práctica", "Esta app y AMFE se pasan los datos en el mismo navegador: en AMFE, «Traer de Flujograma»; aquí, «Traer de AMFE» (paso 1) para enlazar los puntos críticos con los números de fallo.")}` },
+        { t: "Procesos estratégicos, clave y de soporte", h: `<p>El mapa de riesgos del curso coloca el flujograma (el <b>proceso clave</b>, el que da servicio al paciente) entre los <b>procesos estratégicos</b> que lo dirigen (contrato programa, plan de calidad, guías de práctica clínica…) y los <b>procesos de soporte</b> que lo hacen posible (recursos humanos, sistemas de información, farmacia, laboratorio, limpieza…).</p><p>En el paso 4, «Marco de procesos» lo dibuja así.</p>` },
+        { t: "Revisar el proceso: ediciones", h: `<p>El tema 3 recomienda revisar el mapa de procesos después de cambios importantes o de incidentes. En el paso 6 puedes crear una <b>edición nueva</b>: una revisión del proceso actual o el <b>proceso propuesto</b> tras las mejoras. La app compara las dos y marca en el dibujo los pasos nuevos y los cambiados.</p>` }
+      ],
+      minicaso: `<p>En Urgencias, el equipo dibujó el proceso general, marcó siete puntos críticos y los analizó en el AMFE (49 fallos). En el mapa de riesgos, el aviso de Triaje lleva los números 8, 9, 10 y 11: clasificación errónea de la prioridad, paciente frágil no detectado, constantes mal registradas y pulsera sin colocar.</p>`,
+      practica: { texto: "Ver el ejemplo de Urgencias", href: "#/flujo/ej-fl-urgencias/5" } }
   ];
+
+  // ---------- Ponte a prueba ----------
+  // t = bloque: "curso" (preguntas del test del curso, temas 2 y 3) | "flujo" (preguntas propias sobre flujogramas)
+  const TEMAS_TEST = { curso: { nom: "Test del curso", aprende: 1 }, flujo: { nom: "Hacer flujogramas", aprende: 5 } };
+  const TEST = [
+    { t: "curso", q: "¿Cuál de las siguientes se considera una herramienta básica para la mejora de procesos en seguridad del paciente?", o: ["Publicidad en redes sociales del hospital.", "Registro contable anual.", "Mapa de procesos.", "Encuesta de clima laboral.", "Manual de bienvenida."], ok: 2, e: "El mapa de procesos es una herramienta básica para identificar, analizar y priorizar procesos críticos.", aprende: 1 },
+    { t: "curso", q: "¿Qué herramienta se usa para representar gráficamente un proceso paso a paso?", o: ["Histograma de frecuencias.", "Flujograma.", "Gráfico de barras.", "Checklist de enfermería.", "Diagrama de Gantt."], ok: 1, e: "El flujograma es ideal para representar procesos y facilitar su análisis y su mejora.", aprende: 1 },
+    { t: "curso", q: "¿Qué se entiende por proceso asistencial en el ámbito sanitario?", o: ["Una tarea aislada sin relación con otras.", "Un conjunto de actividades interrelacionadas que transforman entradas en resultados para el paciente.", "Una reunión del equipo directivo.", "La elaboración de presupuestos anuales.", "Una estrategia de marketing hospitalario."], ok: 1, e: "Un proceso asistencial integra actividades y recursos para generar resultados orientados a la atención del paciente.", aprende: 1 },
+    { t: "curso", q: "¿Qué tipo de proceso se considera clave para la seguridad del paciente?", o: ["Los procesos estratégicos de planificación financiera.", "Los procesos de soporte exclusivamente.", "Los procesos asistenciales que impactan directamente en la atención al paciente.", "La gestión de contratos con proveedores externos.", "Los procesos de comunicación interna no clínicos."], ok: 2, e: "Los procesos asistenciales son los más críticos porque afectan de forma directa a la seguridad y la calidad de la atención.", aprende: 7 },
+    { t: "curso", q: "¿Qué herramienta es útil para representar gráficamente las etapas de un proceso?", o: ["Diagrama de flujo o flujograma.", "Diagrama de Gantt de obras.", "Inventario de almacén.", "Lista de verificación de emergencias.", "Informe financiero anual."], ok: 0, e: "El flujograma permite visualizar cada fase del proceso y detectar posibles puntos de riesgo.", aprende: 1 },
+    { t: "curso", q: "¿Por qué es importante mapear procesos en una Unidad de Gestión Clínica?", o: ["Para aumentar la carga documental.", "Para evidenciar problemas de personal.", "Para identificar actividades críticas y priorizar acciones de mejora.", "Para justificar inversiones ante proveedores.", "Para asignar vacaciones equitativas."], ok: 2, e: "Mapear procesos permite localizar puntos débiles o críticos y planificar medidas de mejora.", aprende: 6 },
+    { t: "curso", q: "¿Qué relación tienen los procesos con el mapa de riesgos?", o: ["Ninguna relación.", "Los procesos son independientes del riesgo.", "El mapa de riesgos se construye priorizando procesos críticos donde pueden producirse fallos.", "El mapa de riesgos sustituye la necesidad de conocer los procesos.", "Los procesos solo afectan a la parte administrativa."], ok: 2, e: "El mapa de riesgos parte del análisis de procesos para identificar dónde pueden producirse fallos y su impacto.", aprende: 7 },
+    { t: "flujo", q: "¿Con qué símbolo se dibuja una decisión?", o: ["Un rectángulo.", "Un rombo.", "Un óvalo o rectángulo redondeado.", "Un paralelogramo.", "Una hoja con la base ondulada."], ok: 1, e: "La decisión es un rombo. El rectángulo es una actividad; el rectángulo redondeado, el inicio o el fin; el paralelogramo, datos; la hoja ondulada, un documento.", aprende: 2 },
+    { t: "flujo", q: "¿Cuántas salidas tiene una decisión bien hecha?", o: ["Una.", "Dos: Sí y No.", "Tantas como opciones haya.", "Ninguna: es el final del proceso.", "Depende de quién la tome."], ok: 1, e: "Una decisión es una pregunta cerrada con dos salidas. Si hay más opciones, se encadenan dos decisiones.", aprende: 5 },
+    { t: "flujo", q: "¿Cuál de estas está bien escrita como actividad?", o: ["Hoja de tratamiento.", "Extrae la muestra y la identifica.", "¿Muestra correcta?", "Laboratorio.", "Muestras."], ok: 1, e: "Una actividad es algo que alguien hace: se escribe con un verbo. «Hoja de tratamiento» es un documento; «¿Muestra correcta?», una decisión; «Laboratorio», un proceso externo.", aprende: 2 },
+    { t: "flujo", q: "En un flujograma por calles, ¿qué es una calle?", o: ["Una flecha larga.", "La columna de un actor: todos sus pasos van en ella.", "Un subproceso.", "El camino del paciente por el hospital.", "Una decisión con varias salidas."], ok: 1, e: "Cada actor (profesional, servicio o el propio paciente) tiene su calle. Así se ve quién hace cada paso.", aprende: 4 },
+    { t: "flujo", q: "¿Por qué merecen atención las flechas que pasan de una calle a otra?", o: ["Porque alargan el dibujo.", "Porque son traspasos: el proceso cambia de manos y ahí se pierde información con facilidad.", "Porque siempre son errores de dibujo.", "Porque indican el final del proceso.", "No merecen ninguna atención especial."], ok: 1, e: "Los traspasos entre profesionales son una de las fuentes más frecuentes de errores: son candidatos claros a punto crítico.", aprende: 4 },
+    { t: "flujo", q: "Un paso que no lleva a ningún sitio y no es un fin es…", o: ["Un punto crítico.", "Un callejón sin salida: falta decir qué pasa después.", "Un proceso externo.", "Una decisión.", "Lo normal en un proceso sanitario."], ok: 1, e: "Todo paso tiene que llevar a otro o terminar en un fin. Si no, el dibujo tiene un hueco (o el proceso real lo tiene).", aprende: 5 },
+    { t: "flujo", q: "¿Quién debe validar el flujograma?", o: ["La dirección del centro.", "La persona que lo ha dibujado.", "El equipo que hace el proceso cada día.", "El servicio de informática.", "Nadie: lo valida la app."], ok: 2, e: "Solo quien hace el proceso a diario sabe si el dibujo refleja lo que de verdad se hace, con sus atajos y sus esperas.", aprende: 1 },
+    { t: "flujo", q: "¿Cuál está escrito como punto crítico (y no como su consecuencia)?", o: ["Error de identidad del paciente.", "Daño al paciente.", "No colocación de la pulsera identificativa.", "Retraso en la atención.", "Insatisfacción del paciente."], ok: 2, e: "Un punto crítico es lo que puede salir mal en el paso. El error de identidad, el daño o el retraso son sus efectos, que irán en el AMFE.", aprende: 6 }
+  ];
+  const EJERCICIOS = {
+    // ¿Qué símbolo es?
+    simbolos: [
+      { texto: "Hoja de tratamiento", tipo: "documento" }, { texto: "¿Valores normales?", tipo: "decision" }, { texto: "Registra en la historia clínica electrónica", tipo: "datos" },
+      { texto: "Extrae la muestra y la identifica", tipo: "actividad" }, { texto: "Llega el paciente en ambulancia", tipo: "terminal" }, { texto: "Laboratorio", tipo: "externo" },
+      { texto: "Informe de alta", tipo: "documento" }, { texto: "Traslada al paciente a Radiología", tipo: "actividad" }
+    ],
+    // Ordena los pasos (procesos A y E del ejercicio 5)
+    ordenar: [
+      { t: "Toma de constantes en planta", pasos: ["Enfermera consulta hoja de indicaciones", "Acude a la habitación del paciente", "Mide TA, FC, FR, SatO2 y Tª", "Registra en historia clínica electrónica", "Informa al médico si hay valores anómalos"] },
+      { t: "Petición de radiografía simple", pasos: ["Médico solicita la prueba desde la historia clínica", "Se imprime volante y se acompaña al paciente", "Técnico realiza la prueba", "Imagen se sube al visor digital", "Radiólogo informa en sistema"] }
+    ],
+    // Señala los puntos críticos: sobre un ejemplo, y se compara con los suyos
+    puntos: { flujo: "ej-fl-constantes" }
+  };
 
   // ---------- Glosario ----------
   const GLOSARIO = [
@@ -377,8 +428,40 @@
       [7, 22, "Demora en encontrar cama y familia sin avisar", "El paciente permanece en Urgencias más de lo necesario y la familia no sabe dónde está.", [43, 49]]
     ] });
 
+  // Minicasos inventados con errores para corregir (Ponte a prueba, «Encuentra el error»)
+  const MINI_MEDICACION = miniFlujo({ clave: "mini-medicacion",
+    meta: { titulo: "Minicaso: administración de medicación oral", proceso: "Administración de medicación oral en planta", unidad: "Hospitalización",
+      inicio: "Hora de la medicación", fin: "Medicación administrada y registrada", notas: "Minicaso inventado con un error a propósito: la decisión «¿Paciente identificado?» no tiene salida para el No." },
+    actores: ["Enfermería", "TCAE"],
+    pasos: [
+      [1, "T", "Hora de la medicación", -1, "2"], [2, "A", "Prepara la medicación del carro", 0, "3"], [3, "D", "¿Paciente identificado con la pulsera?", 0, "si:4"],
+      [4, "A", "Administra la medicación", 0, "5"], [5, "Da", "Registra la administración", 0, "6"], [6, "T", "Medicación administrada", -1, ""]
+    ] });
+  const MINI_INTERCONSULTA = miniFlujo({ clave: "mini-interconsulta",
+    meta: { titulo: "Minicaso: petición de interconsulta", proceso: "Petición de interconsulta a otro servicio", unidad: "Hospitalización",
+      inicio: "El facultativo decide pedir la interconsulta", fin: "El especialista valora al paciente", notas: "Minicaso inventado con dos errores a propósito: a «Avisa a la planta de la hora» no se llega desde ningún sitio, y «Valora al paciente» no lleva a ningún sitio." },
+    actores: ["Facultativo", "Administrativo", "Especialista"],
+    pasos: [
+      [1, "T", "Decide pedir la interconsulta", -1, "2"], [2, "A", "Rellena la petición", 0, "3"], [3, "Doc", "Hoja de interconsulta", 0, "4"],
+      [4, "A", "Registra y cita la interconsulta", 1, "6"], [5, "A", "Avisa a la planta de la hora", 1, "6"], [6, "A", "Valora al paciente", 2, ""]
+    ] });
+  const MINI_CURAS = miniFlujo({ clave: "mini-curas",
+    meta: { titulo: "Minicaso: cura de una úlcera por presión", proceso: "Cura de una úlcera por presión", unidad: "Hospitalización",
+      inicio: "Toca la cura según el plan de cuidados", fin: "Cura hecha y registrada", notas: "Minicaso inventado con un error a propósito: «Hoja de curas» está como actividad, pero es un documento; y la decisión no está escrita como pregunta." },
+    actores: ["Enfermería", "TCAE"],
+    pasos: [
+      [1, "T", "Toca la cura", -1, "2"], [2, "A", "Hoja de curas", 0, "3"], [3, "A", "Moviliza al paciente", 1, "4"],
+      [4, "D", "Signos de infección", 0, "si:5,no:6"], [5, "A", "Avisa al facultativo", 0, "6"], [6, "A", "Hace la cura y la registra", 0, "7"], [7, "T", "Cura hecha", -1, ""]
+    ] });
+  const ERRORES = [
+    { flujo: "ej-fl-mini-medicacion", t: "Administración de medicación oral", o: ["Falta el inicio", "La decisión no tiene salida para el No", "Hay un paso sin actor", "Un documento está como actividad"], ok: 1, e: "Si el paciente no está identificado, ¿qué pasa? La decisión necesita las dos salidas: lo lógico es que el No lleve a identificarlo antes de administrar nada." },
+    { flujo: "ej-fl-mini-interconsulta", t: "Petición de interconsulta", o: ["La decisión no tiene salida para el No", "Falta el fin y a un paso no se llega desde ningún sitio", "Hay dos inicios", "El texto es demasiado largo"], ok: 1, e: "«Valora al paciente» no lleva a ningún fin, y a «Avisa a la planta de la hora» no llega ninguna flecha: debería ir después de citar la interconsulta." },
+    { flujo: "ej-fl-mini-curas", t: "Cura de una úlcera por presión", o: ["Falta el fin", "«Hoja de curas» es un documento escrito como actividad, y la decisión no es una pregunta", "Hay un callejón sin salida", "Todo está en una sola calle"], ok: 1, e: "«Hoja de curas» es un papel: o es un documento, o la actividad es «Consulta la hoja de curas». Y «Signos de infección» se escribe como pregunta: «¿Signos de infección?»." }
+  ];
+
   const EJEMPLOS = {
-    flujos: [CONSTANTES, ALTA, QUIROFANO, ANALITICA, RADIOGRAFIA, URGENCIAS],
+    flujos: [CONSTANTES, ALTA, QUIROFANO, ANALITICA, RADIOGRAFIA, URGENCIAS, MINI_MEDICACION, MINI_INTERCONSULTA, MINI_CURAS],
+    minicasos: ERRORES.map(x => ({ t: x.t, s: "Minicaso con errores para corregir.", href: `#/flujo/${x.flujo}/4` })),
     fichas: [
       { t: "Toma de constantes en planta", s: "2 calles · 11 pasos · una decisión y dos documentos. El más sencillo para empezar.", href: "#/flujo/ej-fl-constantes/4" },
       { t: "Alta hospitalaria programada", s: "3 calles · 17 pasos · tres decisiones y dos finales (alta o continúa ingreso).", href: "#/flujo/ej-fl-alta/4" },
@@ -390,7 +473,7 @@
     proximos: []
   };
 
-  const API = { TEMAS, GLOSARIO, EJEMPLOS };
+  const API = { TEMAS, GLOSARIO, EJEMPLOS, TEST, TEMAS_TEST, EJERCICIOS, ERRORES };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   else raiz.Contenido = API;
 })(typeof window !== "undefined" ? window : this);

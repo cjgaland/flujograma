@@ -15,8 +15,16 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.03";
+  const APP_VERSION = "2026.04";
   const NOVEDADES = [
+    { version: "2026.04", fecha: "Octubre 2026", titulo: "Ponte a prueba, recorrido, modo reunión y ediciones", cambios: [
+      "«Ponte a prueba»: las preguntas del test del curso sobre procesos y flujogramas y otras sobre cómo hacerlos, con su explicación.",
+      "Cuatro ejercicios: ¿qué símbolo es?, ordena los pasos, encuentra el error en un flujograma mal hecho y señala los puntos críticos comparando con el ejemplo.",
+      "Tres minicasos con errores a propósito para practicar con el validador.",
+      "Vista recorrido en el paso 4: el proceso paso a paso, en tarjetas grandes, para revisarlo en el móvil o con el equipo. Y modo reunión, con letra grande y la pantalla limpia para proyectar.",
+      "Ediciones en el paso 6: una revisión del proceso actual o el proceso propuesto tras las mejoras. La app compara las dos y marca en el dibujo los pasos nuevos y los cambiados.",
+      "Hoja en blanco para dibujar en papel en las sesiones: la leyenda de símbolos, las calles con sus nombres y las tablas de pasos y de puntos críticos.",
+      "Aprende: nuevo tema 7, del flujograma al AMFE y al mapa de riesgos."] },
     { version: "2026.03", fecha: "Octubre 2026", titulo: "Word, Excel, «Traer de AMFE» y el ejemplo de Urgencias", cambios: [
       "Documento del proceso en Word editable: control del documento, descripción, actores, subprocesos, el flujograma como imagen, la leyenda de símbolos, la tabla de pasos y los puntos críticos.",
       "Libro de Excel con los pasos, los puntos críticos (sus columnas se pueden pegar tal cual en el paso 4 de AMFE), los subprocesos y los actores.",
@@ -43,7 +51,7 @@
       "Validador: avisa si falta el inicio o el fin, de los callejones sin salida, de las decisiones sin Sí o sin No y de otros errores habituales.",
       "Ejemplos del curso (toma de constantes y petición de radiografía), Aprende (5 temas), glosario y copia de seguridad."] }
   ];
-  const ENTREGA = 3;   // pasos ya construidos (ver L.PASOS[].entrega)
+  const ENTREGA = 4;   // pasos ya construidos (ver L.PASOS[].entrega)
 
   // ---------- Utilidades ----------
   const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -191,8 +199,9 @@
         <div class="toolbar"><button class="btn" data-act="copia">⬇ Copia de seguridad</button><button class="btn" data-act="importar">⬆ Importar copia</button></div>
       </div>
       <div class="guide">
-        <a class="guide-card" href="#/ejemplos"><span class="guide-num">Ej</span><div><div class="guide-q">Ejemplos</div><div class="guide-a">Los flujogramas del curso: <b>toma de constantes</b> y <b>petición de radiografía</b>, listos para mirar y copiar.</div></div><span class="guide-go">›</span></a>
+        <a class="guide-card" href="#/ejemplos"><span class="guide-num">Ej</span><div><div class="guide-q">Ejemplos</div><div class="guide-a">La <b>atención en Urgencias</b> con su mapa de riesgos, los <b>cinco procesos</b> del curso y tres minicasos con errores para corregir.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card" href="#/aprende"><span class="guide-num">?</span><div><div class="guide-q">Aprende</div><div class="guide-a">${C.TEMAS.length} temas <b>explicados fácil</b>: del mapa de procesos a las decisiones bien hechas.</div></div><span class="guide-go">›</span></a>
+        <a class="guide-card" href="#/prueba"><span class="guide-num">✓</span><div><div class="guide-q">Ponte a prueba</div><div class="guide-a">${C.TEST.length} preguntas con su <b>explicación</b> y cuatro ejercicios: símbolos, ordenar, encontrar el error y puntos críticos.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card" href="#/glosario"><span class="guide-num">A–Z</span><div><div class="guide-q">Glosario</div><div class="guide-a">${C.GLOSARIO.length} términos <b>en lenguaje llano</b>, con buscador.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_AMFE}" target="_blank" rel="noopener"><span class="guide-num">!</span><div><div class="guide-q">AMFE ↗</div><div class="guide-a">App hermana: analiza <b>qué puede fallar</b> en cada paso del proceso, qué pasaría y por qué.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_AUD}" target="_blank" rel="noopener"><span class="guide-num">✓</span><div><div class="guide-q">Auditorías ↗</div><div class="guide-a">App hermana: <b>comprueba con una auditoría</b> si el proceso se hace como se ha dibujado.</div></div><span class="guide-go">›</span></a>
@@ -217,7 +226,7 @@
       <a class="item-main" href="#/flujo/${f.id}">
         <b class="item-t">${lleno(nombreFlujo(f)) ? esc(nombreFlujo(f)) : '<span class="vacio">Flujograma sin nombre</span>'}</b>
         <span class="item-s">${esc([f.unidad, f.titulo && f.proceso !== f.titulo ? f.proceso : ""].filter(lleno).join(" · ")) || "&nbsp;"}</span>
-        <span class="badges"><span class="badge">${plural(r.pasos, "paso", "pasos")}</span><span class="badge">${plural(r.actores, "calle", "calles")}</span>${r.subprocesos ? `<span class="badge">${plural(r.subprocesos, "subproceso", "subprocesos")}</span>` : ""}${r.errores ? `<span class="badge badge--grave">${plural(r.errores, "error", "errores")}</span>` : ""}${lleno(f.validado) ? `<span class="badge badge--ok">Validado</span>` : ""}<span class="badge badge--prog">Pasos ${hechos}/${disp.length}</span></span>
+        <span class="badges"><span class="badge">${plural(r.pasos, "paso", "pasos")}</span><span class="badge">${plural(r.actores, "calle", "calles")}</span>${r.subprocesos ? `<span class="badge">${plural(r.subprocesos, "subproceso", "subprocesos")}</span>` : ""}${r.errores ? `<span class="badge badge--grave">${plural(r.errores, "error", "errores")}</span>` : ""}${lleno(f.validado) ? `<span class="badge badge--ok">Validado</span>` : ""}${f.edicion && f.edicion !== "00" ? `<span class="badge">Edición ${esc(f.edicion)}${f.tipoEdicion === "propuesto" ? " · propuesto" : ""}</span>` : ""}<span class="badge badge--prog">Pasos ${hechos}/${disp.length}</span></span>
       </a>
       <div class="item-pie"><span>Modificado: ${fechaCorta(f.modificado)}</span><span><button class="link-btn" data-act="fl-dup" data-id="${f.id}">Duplicar</button> · <button class="link-btn link-btn--peligro" data-act="fl-del" data-id="${f.id}">Borrar</button></span></div>
     </div>`;
@@ -233,7 +242,7 @@
 
   function renderFlujo(f, n) {
     actual = f; pasoActual = n; nAyuda = 0;
-    if (document.body.classList.contains("ver-informe")) { renderInforme(f); return; }
+    if (document.body.classList.contains("ver-informe")) { if (docActual === "hoja") renderHoja(f); else renderInforme(f); return; }
     const p = L.PASOS[n - 1], disp = pasosDisp();
     const prev = disp.filter(x => x.n < n).pop(), next = disp.find(x => x.n > n);
     const cuerpo = !disponible(p) ? pasoProximo(f, p) : RENDER[n](f);
@@ -448,8 +457,10 @@
           <button type="button" class="chip${V.numeros ? " active" : ""}" data-act="v-num">Números</button>
           <button type="button" class="chip${V.letra === "grande" ? " active" : ""}" data-act="v-letra">Letra grande</button>
         </div>
+        ${pasoActual === 4 ? `<div class="lienzo-ops"><button type="button" class="chip${recorrido ? " active" : ""}" data-act="recorrido">▶ Recorrido</button><button type="button" class="chip" data-act="reunion">⛶ Modo reunión</button>${anteriorDe(f) ? `<button type="button" class="chip${verCambios ? " active" : ""}" data-act="ver-cambios" title="Verde: pasos nuevos; ámbar: pasos cambiados respecto a la edición anterior">Cambios</button>` : ""}</div>` : ""}
         <div class="zoom-btns"><button type="button" class="icon-mini" data-act="z-menos" aria-label="Reducir">−</button><button type="button" class="btn btn--sm" data-act="z-ajustar">Ajustar</button><button type="button" class="icon-mini" data-act="z-mas" aria-label="Ampliar">+</button></div>
       </div>
+      ${recorrido && pasoActual === 4 ? `<div data-zona="recorrido">${recorridoHtml(f)}</div>` : ""}
       <div class="lienzo" id="lienzo" tabindex="0" aria-label="Flujograma. Usa los botones para ampliar o reducir."><div class="lienzo-in" data-zona="lienzo">${svgActual(f)}</div></div>
       <div data-zona="panel">${panelHtml(f)}</div>
       ${V.marco && pasoActual === 4 ? marcoHtml(f) : ""}`;
@@ -479,7 +490,8 @@
   }
   function svgActual(f) {
     const marcar = new Set(pasoActual === 5 ? [] : L.errores(f).map(a => a.paso).filter(Boolean));
-    return D.svg(L.dibujar(f), { marcar, sel: selPaso, numeros: f.vista.numeros, titulo: "Flujograma: " + (nombreFlujo(f) || "sin nombre"), accesible: true });
+    const cmp = pasoActual === 4 && verCambios && anteriorDe(f) ? L.compararEdiciones(anteriorDe(f), f) : null;
+    return D.svg(L.dibujar(f), { marcar, sel: recorrido && pasoActual === 4 ? pasoRec : selPaso, nuevos: cmp ? new Set(cmp.nuevos.map(p => p.id)) : null, cambiados: cmp ? new Set(cmp.cambiados.map(c => c.paso.id)) : null, numeros: f.vista.numeros, titulo: "Flujograma: " + (nombreFlujo(f) || "sin nombre"), accesible: true });
   }
   function panelHtml(f) {
     const p = selPaso && L.pasoDe(f, selPaso);
@@ -546,6 +558,40 @@
     const pz = $("[data-zona='panel']"); if (pz) { pz.innerHTML = panelHtml(f); if (id) pz.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
   }
   window.addEventListener("resize", () => { if ((pasoActual === 4 || pasoActual === 5) && zoom == null) aplicarZoom(); });
+
+  // ---------- Vista recorrido y modo reunión (mejora F) ----------
+  let recorrido = false, pasoRec = "", historialRec = [], verCambios = true;
+  const anteriorDe = f => f.anteriorId ? (datos.flujos.find(x => x.id === f.anteriorId) || null) : null;
+  function recorridoHtml(f) {
+    const p = L.pasoDe(f, pasoRec) || L.primerPaso(f); if (!p) return "";
+    pasoRec = p.id;
+    const i = f.pasos.indexOf(p), a = L.actorDe(f, p), sb = L.subDe(f, p), S = L.salidasDe(f, p), E = L.entradasDe(f, p), pts = f.puntos.filter(x => x.pasoId === p.id);
+    const traspaso = q => q && q.actorId && p.actorId && q.actorId !== p.actorId;
+    return `<div class="rec-card tipo-borde--${p.tipo}">
+      <div class="rec-cab"><span class="rec-n">Paso ${p.num}</span>${tipoChip(p.tipo)}<span class="rec-tipo">${esc(L.TIPOS[p.tipo].nom)}</span>${sb ? `<span class="rec-sub">${subPunto(sb)}${esc(sb.nombre)}</span>` : ""}<button type="button" class="link-btn" data-act="recorrido">Cerrar ✕</button></div>
+      <p class="rec-txt">${esc(p.texto || "(sin texto)")}</p>
+      <p class="rec-quien">${a ? `<b>${esc(a.nombre)}</b>` : p.tipo === "terminal" ? (L.esInicio(f, p) ? "Inicio del proceso" : "Fin del proceso") : "Sin actor"}${E.length ? ` · viene de ${E.map(q => `nº ${q.num}${traspaso(q) ? " (traspaso desde " + esc(L.actorDe(f, q).nombre) + ")" : ""}`).join(", ")}` : ""}</p>
+      ${pts.length ? `<div class="rec-pc">${pts.map(x => `<span class="pc-num">⚠ ${x.num}</span> ${esc(x.titulo)}`).join("<br>")}</div>` : ""}
+      <div class="rec-acc">
+        <button type="button" class="btn" data-act="rec-atras"${historialRec.length ? "" : " disabled"}>← Atrás</button>
+        ${S.map(x => `<button type="button" class="btn btn--primary${x.s.etiqueta === "no" ? " rec-no" : ""}" data-act="rec-ir" data-id="${x.q.id}">${x.s.etiqueta === "si" ? "Sí → " : x.s.etiqueta === "no" ? "No → " : "→ "}${esc(L.corto(x.q.texto, 34))}</button>`).join("") || `<span class="badge">Fin</span><button type="button" class="btn" data-act="rec-inicio">Volver a empezar</button>`}
+      </div></div>`;
+  }
+  function irRecorrido(id, atras) {
+    if (!atras && pasoRec) historialRec.push(pasoRec);
+    pasoRec = id; const f = actual;
+    const z = $("[data-zona='recorrido']"); if (z) z.innerHTML = recorridoHtml(f);
+    const l = $("[data-zona='lienzo']"); if (l) { l.innerHTML = svgActual(f); aplicarZoom(); }
+    const s = $(`#lienzo .fl-nodo[data-paso="${pasoRec}"]`), lz = $("#lienzo");
+    if (s && lz) { const r = s.getBoundingClientRect(), rl = lz.getBoundingClientRect(); lz.scrollLeft += r.left - rl.left - rl.width / 2 + r.width / 2; lz.scrollTop += r.top - rl.top - rl.height / 2 + r.height / 2; }
+  }
+  function ponerReunion(si) {
+    document.body.classList.toggle("modo-reunion", si);
+    let x = $("#salir-reunion");
+    if (si && !x) { x = document.createElement("button"); x.id = "salir-reunion"; x.className = "btn salir-reunion no-print"; x.textContent = "✕ Salir del modo reunión"; x.addEventListener("click", () => ponerReunion(false)); document.body.appendChild(x); }
+    if (!si && x) x.remove();
+    if (actual) { zoom = null; repintar(); }
+  }
 
   // ---------- Paso 5 · Puntos críticos ----------
   const bpc = (x, k) => `data-pc="${x.id}" data-f="${k}"`;
@@ -622,11 +668,29 @@
         <div class="card export-card"><h3 class="sub-h">📊 Excel</h3><p class="field-sub">Pasos, puntos críticos, subprocesos y actores. Las columnas «Subproceso» y «Error o punto crítico» se pueden copiar y pegar en el paso 4 de AMFE.</p>
           <div class="toolbar"><button class="btn btn--primary" data-act="ex-excel">⬇ Excel</button></div></div>
       </div>
+      <div class="toolbar no-print"><button class="btn" data-act="hoja">🖨 Hoja en blanco para dibujar en papel</button></div>
       <h2 class="sec-t">Control del documento</h2>
       ${controlHtml(f)}
+      <h2 class="sec-t">Ediciones</h2>
+      ${edicionesHtml(f)}
       <h2 class="sec-t">Para otras apps</h2>
       ${practica("Las apps <b>AMFE</b> y <b>Mapa de Riesgos</b> podrán traer este flujograma (sus subprocesos, sus pasos y sus puntos críticos) con un botón «Traer de Flujograma», si las usas en este mismo navegador. Desde otro dispositivo, con la copia de seguridad.")}
       <div class="toolbar no-print"><button class="btn" data-act="copia">⬇ Copia de seguridad</button></div>`;
+  }
+
+  // Ediciones (mejora G): revisión del proceso actual o proceso propuesto tras las mejoras
+  function edicionesHtml(f) {
+    const ant = anteriorDe(f), cmp = ant ? L.compararEdiciones(ant, f) : null, lst = l => l.map(p => `nº ${p.num} «${esc(L.corto(p.texto, 40))}»`).join(", ");
+    return `<div class="card">
+      <p class="field-sub">Edición <b>${esc(f.edicion || "00")}</b> · ${f.tipoEdicion === "propuesto" ? "<b>proceso propuesto</b> (cómo quedará tras las mejoras)" : "proceso actual"}${ant ? ` · viene de la edición ${esc(ant.edicion)} (<a href="#/flujo/${ant.id}/4">abrirla</a>)` : ""}.</p>
+      ${cmp ? `<div class="cmp-ed"><b>Cambios respecto a la edición ${esc(ant.edicion)}</b>
+        <ul><li>Pasos: ${cmp.pasos[0]} → ${cmp.pasos[1]} · traspasos entre calles: ${cmp.traspasos[0]} → ${cmp.traspasos[1]} · decisiones: ${cmp.decisiones[0]} → ${cmp.decisiones[1]} · puntos críticos: ${cmp.puntos[0]} → ${cmp.puntos[1]}</li>
+        ${cmp.nuevos.length ? `<li><span class="cmp-nuevo">Nuevos</span> ${lst(cmp.nuevos)}</li>` : ""}${cmp.quitados.length ? `<li><span class="cmp-quitado">Quitados</span> ${lst(cmp.quitados)}</li>` : ""}
+        ${cmp.cambiados.map(c => `<li><span class="cmp-cambio">Cambia</span> nº ${c.paso.num}: ${esc(c.cambios.join("; "))}</li>`).join("")}
+        ${!cmp.nuevos.length && !cmp.quitados.length && !cmp.cambiados.length ? "<li>Aún no hay cambios en los pasos.</li>" : ""}</ul>
+        <p class="field-sub">En el dibujo (paso 4), «Cambios» marca en verde los pasos nuevos y en ámbar los cambiados.</p></div>` : ""}
+      <p class="field-sub">Crea una edición nueva para revisar el proceso (tras un cambio o un incidente) o para dibujar el proceso propuesto tras las acciones de mejora. Esta edición se queda como está, para comparar.</p>
+      <div class="toolbar no-print"><button class="btn" data-act="ed-nueva" data-v="actual">Nueva edición: revisión</button><button class="btn btn--primary" data-act="ed-nueva" data-v="propuesto">Nueva edición: proceso propuesto</button></div></div>`;
   }
 
   // Control del documento (como en el Documento Final): elaborado, revisado, aprobado e histórico de revisiones
@@ -666,7 +730,7 @@
         <h1 class="page-title">Aprende</h1>
         <p class="page-lead">${T.length} temas, explicados fácil, para tener a mano mientras haces tu flujograma.</p>
         <div class="temas">${T.map(x => `<a class="tema-card pdca--${x.c}" href="#/aprende/${x.n}"><span class="tema-n">${x.n}</span><span><b>${x.titulo}</b><span>${x.sub}</span></span></a>`).join("")}</div>
-        <p class="field-sub">Próximamente: dónde buscar los puntos críticos y cómo pasar del flujograma al AMFE y al mapa de riesgos.</p>`;
+        <div class="toolbar"><a class="btn btn--primary" href="#/prueba">✓ Ponte a prueba</a></div>`;
       return;
     }
     const prev = T.find(x => x.n === n - 1), next = T.find(x => x.n === n + 1);
@@ -676,7 +740,7 @@
       <div class="card minuto pdca--${t.c}"><h2 class="sub-h">En un minuto</h2><ul>${t.minuto.map(x => `<li>${x}</li>`).join("")}</ul></div>
       ${t.secciones.map((s, i) => `<details class="facil"${i === 0 ? " open" : ""}><summary>${s.t}</summary><div class="facil-body">${s.h}</div></details>`).join("")}
       ${box("ejemplo", "Minicaso", t.minicaso)}
-      <div class="toolbar"><a class="btn btn--primary" href="${t.practica.href}">${t.practica.texto} →</a></div>
+      <div class="toolbar"><a class="btn" href="#/prueba">✓ Ponte a prueba</a><a class="btn btn--primary" href="${t.practica.href}">${t.practica.texto} →</a></div>
       <div class="wiz-nav no-print">${prev ? `<a class="btn" href="#/aprende/${prev.n}">← ${prev.titulo}</a>` : "<span></span>"}${next ? `<a class="btn" href="#/aprende/${next.n}">${next.titulo} →</a>` : "<span></span>"}</div>`;
     $$("[data-leyenda]", view).forEach(el => { el.className = "leyenda-wrap"; el.innerHTML = D.leyenda(L.ORDEN_TIPOS.map(x => [x, L.TIPOS[x].corto])); });
   }
@@ -690,7 +754,75 @@
       <div class="ej-grid"><a class="ej-card ej-card--grande" href="${C.EJEMPLOS.urgencias.href}"><b>${esc(C.EJEMPLOS.urgencias.t)}</b><span>${esc(C.EJEMPLOS.urgencias.s)}</span></a></div>
       <h2 class="sec-t">Procesos del ejercicio 5</h2>
       <div class="ej-grid">${C.EJEMPLOS.fichas.map(x => `<a class="ej-card" href="${x.href}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></a>`).join("")}</div>
+      <h2 class="sec-t">Minicasos con errores</h2>
+      <p class="field-sub">Flujogramas cortos e inventados con errores a propósito. Ábrelos, mira qué marca el validador en rojo y corrígelos.</p>
+      <div class="ej-grid ej-grid--mini">${C.EJEMPLOS.minicasos.map(x => `<a class="ej-card" href="${x.href}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></a>`).join("")}</div>
       ${practica("Los ejemplos reproducen las soluciones del curso. Lo que se ha añadido para que el dibujo no tenga callejones sin salida se explica en la nota de cada uno (paso 1).")}`;
+  }
+
+  // ---------- Ponte a prueba ----------
+  const respuestas = {}, respSimb = {}, respErr = {}, ordenes = C.EJERCICIOS.ordenar.map(() => ({ sel: [], hecho: false })), puntosEj = { sel: new Set(), ver: false };
+  let temaPrueba = "";
+  // Orden de las opciones barajado pero estable (para que la correcta no esté siempre en el mismo sitio)
+  const barajar = (n, semilla) => { const a = Array.from({ length: n }, (_, i) => i); let s = semilla * 9301 + 49297; for (let i = n - 1; i > 0; i--) { s = (s * 9301 + 49297) % 233280; const j = Math.floor(s / 233280 * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pillsPrueba = act => `<div class="tema-pills prueba-pills no-print"><a href="#/prueba" class="pdca--P${!act ? " actual" : ""}" title="Todas las preguntas">T</a>${Object.keys(C.TEMAS_TEST).map((k, i) => `<a href="#/prueba/${k}" class="pdca--P${act === k ? " actual" : ""}" title="${esc(C.TEMAS_TEST[k].nom)}">${i + 1}</a>`).join("")}<a href="#/prueba/practica" class="pdca--H${act === "practica" ? " actual" : ""}" title="Ejercicios prácticos">✎</a></div>`;
+  function renderPrueba(tema) {
+    temaPrueba = C.TEMAS_TEST[tema] ? tema : tema === "practica" ? "practica" : "";
+    if (temaPrueba === "practica") { renderPractica(); return; }
+    const Q = C.TEST.map((q, i) => Object.assign({ i }, q)).filter(q => !temaPrueba || q.t === temaPrueba);
+    const hechas = Q.filter(q => q.i in respuestas), bien = hechas.filter(q => respuestas[q.i] === q.ok).length, pc = hechas.length ? bien / hechas.length : 0;
+    view.innerHTML = `
+      <h1 class="page-title">Ponte a prueba</h1>
+      <p class="page-lead">${C.TEST.length} preguntas: las del test del curso sobre procesos y flujogramas, y otras sobre cómo hacerlos${temaPrueba ? ` (aquí, «${esc(C.TEMAS_TEST[temaPrueba].nom)}»)` : ""}. Toca la respuesta y lee la explicación. En ✎, cuatro ejercicios prácticos.</p>
+      ${pillsPrueba(temaPrueba)}
+      <div class="marcador">${hechas.length ? `<span><b>${bien}</b> aciertos de ${hechas.length} respondidas (de ${Q.length})</span>${hechas.length === Q.length ? `<span class="sem-b sem-b--${pc >= 0.8 ? "verde" : pc >= 0.6 ? "ambar" : "rojo"}">${pc >= 0.8 ? "¡Muy bien!" : pc >= 0.6 ? "Bien: repasa los fallos" : "Repasa «Aprende»"}</span>` : ""}` : `<span class="field-sub">Aciertos: 0 de ${Q.length}</span>`}</div>
+      <div class="card">${Q.map(q => { const ord = barajar(q.o.length, q.i + 3), r = respuestas[q.i]; return `<div class="quiz-q">
+        <p><span class="badge">${esc(C.TEMAS_TEST[q.t].nom)}</span> <b>${esc(q.q)}</b></p>
+        ${ord.map(j => `<button class="quiz-o${r != null ? (j === q.ok ? " quiz-o--ok" : j === r ? " quiz-o--mal" : "") : ""}" data-act="quiz" data-q="${q.i}" data-o="${j}">${esc(q.o[j])}</button>`).join("")}
+        ${r != null ? `<p class="quiz-fb">${r === q.ok ? "<b>¡Correcto!</b> " : "<b>No.</b> "}${esc(q.e)} <a href="#/aprende/${q.aprende}">Repasar en «Aprende»</a></p>` : ""}
+      </div>`; }).join("")}</div>
+      <div class="toolbar no-print"><button class="btn" data-act="quiz-reset">Empezar de nuevo</button><a class="btn btn--primary" href="#/prueba/practica">Ejercicios prácticos →</a></div>`;
+  }
+  const repPractica = () => { const y = window.scrollY; renderPractica(); window.scrollTo(0, y); };
+  function svgEjemplo(id, opc = {}) {
+    const f = ejemplos().flujos.find(x => x.id === id); if (!f) return "";
+    const g = Object.assign(clon(f), opc.sinPuntos ? { puntos: [] } : {});
+    return D.svg(L.dibujar(g, { marco: false }), Object.assign({ numeros: true }, opc));
+  }
+  function renderPractica() {
+    const E = C.EJERCICIOS, TS = L.ORDEN_TIPOS;
+    const nS = Object.keys(respSimb).length, bS = E.simbolos.filter((x, i) => respSimb[i] === x.tipo).length;
+    const fP = ejemplos().flujos.find(x => x.id === E.puntos.flujo), suyos = new Set(fP.puntos.map(x => x.pasoId));
+    const coinc = [...puntosEj.sel].filter(x => suyos.has(x)).length;
+    view.innerHTML = `
+      <h1 class="page-title">Ponte a prueba · ejercicios</h1>
+      <p class="page-lead">Cuatro ejercicios con los procesos del curso.</p>
+      ${pillsPrueba("practica")}
+      <h2 class="sec-t">1. ¿Qué símbolo es?</h2>
+      <p class="field-sub">¿Con qué símbolo dibujarías cada paso? ${nS ? `<b>${bS} de ${nS}</b> bien.` : ""}</p>
+      <div class="card">${E.simbolos.map((x, i) => { const r = respSimb[i]; return `<div class="quiz-q"><p><b>«${esc(x.texto)}»</b></p>
+        <div class="tipos" role="group">${TS.map(tp => `<button type="button" class="tipo-btn${r ? (tp === x.tipo ? " fec-ok" : tp === r ? " fec-mal" : "") : ""}" data-act="simb" data-i="${i}" data-v="${tp}">${tipoChip(tp)}<span>${L.TIPOS[tp].corto}</span></button>`).join("")}</div>
+        ${r ? `<p class="quiz-fb">${r === x.tipo ? "<b>¡Correcto!</b> " : "<b>No.</b> "}Es ${esc(L.TIPOS[x.tipo].nom.toLowerCase())} (${esc(L.TIPOS[x.tipo].forma.toLowerCase())}): ${esc(L.TIPOS[x.tipo].que)}</p>` : ""}</div>`; }).join("")}</div>
+      <h2 class="sec-t">2. Ordena los pasos</h2>
+      <p class="field-sub">Toca los pasos en el orden en que ocurren.</p>
+      ${E.ordenar.map((o, k) => { const st = ordenes[k], mez = barajar(o.pasos.length, k + 7), bien = st.sel.every((x, i) => x === i); return `<div class="card"><h3 class="sub-h">${esc(o.t)}</h3>
+        ${st.sel.length ? `<ol class="ord-elegidos">${st.sel.map((x, i) => `<li class="${st.hecho ? (x === i ? "ord-ok" : "ord-mal") : ""}">${esc(o.pasos[x])}</li>`).join("")}</ol>` : ""}
+        <div class="ord-op">${mez.filter(j => !st.sel.includes(j)).map(j => `<button type="button" class="chip" data-act="ord" data-k="${k}" data-i="${j}">${esc(o.pasos[j])}</button>`).join("")}</div>
+        ${st.hecho ? `<p class="quiz-fb">${bien ? "<b>¡Correcto!</b> Ese es el orden del curso." : "<b>No del todo.</b> En verde, los que están en su sitio. El orden del curso: " + esc(o.pasos.join(" → ")) + "."}</p>` : ""}
+        ${st.sel.length ? `<button type="button" class="link-btn" data-act="ord-reset" data-k="${k}">Empezar de nuevo</button>` : ""}</div>`; }).join("")}
+      <h2 class="sec-t">3. Encuentra el error</h2>
+      <p class="field-sub">Cada uno de estos flujogramas tiene algún error. ¿Cuál?</p>
+      ${C.ERRORES.map((x, i) => { const r = respErr[i]; return `<div class="card err-ej"><h3 class="sub-h">${esc(x.t)}</h3>
+        <div class="lienzo lienzo--mini"><div class="lienzo-in">${svgEjemplo(x.flujo)}</div></div>
+        ${x.o.map((op, j) => `<button class="quiz-o${r != null ? (j === x.ok ? " quiz-o--ok" : j === r ? " quiz-o--mal" : "") : ""}" data-act="err" data-i="${i}" data-o="${j}">${esc(op)}</button>`).join("")}
+        ${r != null ? `<p class="quiz-fb">${r === x.ok ? "<b>¡Correcto!</b> " : "<b>No.</b> "}${esc(x.e)} <a href="#/flujo/${x.flujo}/3">Corregirlo</a></p>` : ""}</div>`; }).join("")}
+      <h2 class="sec-t">4. Señala los puntos críticos</h2>
+      <p class="field-sub">Toca en el dibujo de la toma de constantes los pasos donde crees que puede fallar el proceso, y compara con los del ejemplo.</p>
+      <div class="card pc-ej">
+        <div class="lienzo lienzo--mini"><div class="lienzo-in">${puntosEj.ver ? svgEjemplo(E.puntos.flujo, { elegidos: puntosEj.sel }) : svgEjemplo(E.puntos.flujo, { sinPuntos: true, elegidos: puntosEj.sel })}</div></div>
+        ${puntosEj.ver ? `<p class="quiz-fb">Has marcado ${plural(puntosEj.sel.size, "paso", "pasos")}; ${plural(coinc, "coincide", "coinciden")} con los ${fP.puntos.length} del ejemplo (los avisos rojos):</p><ul>${fP.puntos.map(x => `<li><b>${esc(x.titulo)}</b> (paso ${L.pasoDe(fP, x.pasoId).num})</li>`).join("")}</ul><p class="field-sub">No hay una única respuesta correcta: lo importante es saber justificar por qué un paso es crítico. ¿Has pensado en los traspasos entre calles?</p>` : `<div class="toolbar"><button class="btn btn--primary" data-act="pc-comparar"${puntosEj.sel.size ? "" : " disabled"}>Comparar con el ejemplo</button><span class="field-sub">${plural(puntosEj.sel.size, "paso marcado", "pasos marcados")}</span></div>`}
+      </div>
+      <div class="toolbar no-print"><button class="btn" data-act="practica-reset">Empezar de nuevo</button><a class="btn" href="#/prueba">← Preguntas</a></div>`;
   }
 
   // ---------- Glosario ----------
@@ -825,6 +957,28 @@
       ${lleno(f.notas) ? `<p class="field-sub">${esc(f.notas)}</p>` : ""}
       ${informePie()}`;
     if (actual === f) marcarExportado(f);
+  }
+  // Hoja en blanco para las sesiones en papel (mejora J)
+  function renderHoja(f) {
+    let est = $("#estilo-pagina"); if (!est) { est = document.createElement("style"); est.id = "estilo-pagina"; document.head.appendChild(est); }
+    est.textContent = "@page { size: A4 landscape; margin: 12mm; }";
+    const act = f.actores.filter(a => lleno(a.nombre)).map(a => a.nombre), nombres = act.length ? act : ["", "", "", ""];
+    const vacias = (n, cols) => Array.from({ length: n }, () => `<tr>${cols.map(() => "<td>&nbsp;</td>").join("")}</tr>`).join("");
+    view.innerHTML = `
+      <div class="informe-bar informe-only"><button class="btn" data-act="volver">← Volver</button><span class="informe-acc"><button class="btn btn--primary" data-act="imprimir">Guardar / imprimir</button></span></div>
+      ${informeCab("Hoja de trabajo · " + (f.proceso || nombreFlujo(f) || "Flujograma"), f.unidad)}
+      <div class="hoja-cab"><p><b>Proceso:</b> ${esc(f.proceso || "______________________________")} &nbsp; <b>Empieza:</b> ${esc(f.inicio || "____________________")} &nbsp; <b>Termina:</b> ${esc(f.fin || "____________________")}</p></div>
+      <h2 class="sec-t">Símbolos</h2>
+      <div class="leyenda-wrap">${D.leyenda(L.ORDEN_TIPOS.map(t => [t, L.TIPOS[t].corto]))}</div>
+      <p class="field-sub">Actividad con verbo («Extrae la muestra»). Decisión como pregunta, con salida Sí y No. Inicio y fin fuera de las calles.</p>
+      <h2 class="sec-t">Flujograma</h2>
+      <div class="informe-graf informe-dib">${D.callesEnBlanco(nombres)}</div>
+      <div class="doc-salto"></div>
+      <h2 class="sec-t">Pasos</h2>
+      <div class="table-wrap"><table class="mini tabla-riesgos tabla-hoja"><thead><tr><th>Nº</th><th>Tipo</th><th>Qué se hace</th><th>Quién</th><th>Sigue a (Sí / No)</th></tr></thead><tbody>${vacias(14, [1, 2, 3, 4, 5])}</tbody></table></div>
+      <h2 class="sec-t">Puntos críticos</h2>
+      <div class="table-wrap"><table class="mini tabla-riesgos tabla-hoja"><thead><tr><th>Id</th><th>Subproceso</th><th>Paso</th><th>Error o punto crítico</th><th>Descripción del error o riesgo</th></tr></thead><tbody>${vacias(8, [1, 2, 3, 4, 5])}</tbody></table></div>
+      ${informePie()}`;
   }
   // ---------- PDF en iOS (sin librerías; mismo método que AMFE y Auditorías) ----------
   // En iOS, window.print() no hace nada cuando la app está instalada en la pantalla de inicio.
@@ -965,7 +1119,7 @@
     }
     descargar(blob, file.name); toast("PDF descargado.", 3000);
   }
-  function irInforme() { location.hash = rutaActual() + "?informe=1"; }
+  function irInforme(doc) { location.hash = rutaActual() + "?informe=1" + (doc ? "&doc=" + doc : ""); }
   function imprimir() {
     if (esIOS()) { guardarPDF(); return; }
     if (!document.body.classList.contains("ver-informe")) { irInforme(); setTimeout(() => window.print(), 400); return; }
@@ -1033,13 +1187,14 @@
   }
 
   // ---------- Enrutado ----------
-  const NAV = [["", "Inicio"], ["flujo", "Mis flujogramas"], ["ejemplos", "Ejemplos"], ["aprende", "Aprende"], ["glosario", "Glosario"]];
+  const NAV = [["", "Inicio"], ["flujo", "Mis flujogramas"], ["ejemplos", "Ejemplos"], ["aprende", "Aprende"], ["prueba", "Ponte a prueba"], ["glosario", "Glosario"]];
   function buildNav() { $("#calc-nav").innerHTML = NAV.map(([r, t]) => `<a href="#/${r}" data-r="${r}">${t}</a>`).join(""); }
   function noEncontrado(que, href, txt) { view.innerHTML = `<div class="error-box">No se encuentra ${que} en este dispositivo.</div><p><a href="${href}">${txt}</a></p>`; }
-  let previo = null;
+  let previo = null, docActual = "";
   function route() {
     const [ruta, qs] = (location.hash.replace(/^#\/?/, "") || "").split("?");
-    const partes = ruta.split("/"), informe = new URLSearchParams(qs || "").get("informe") === "1";
+    const partes = ruta.split("/"), q = new URLSearchParams(qs || ""), informe = q.get("informe") === "1";
+    docActual = informe ? (q.get("doc") || "") : "";
     document.body.classList.toggle("ver-informe", informe);
     actual = null;
     const idR = partes[1] || "", ej = ejemplos();
@@ -1054,7 +1209,7 @@
       const f = buscaFlujo(partes[1]) || borradores.get(partes[1]);
       if (!f) noEncontrado("ese flujograma", "#/flujo", "Ir a mis flujogramas");
       else {
-        if (previo !== f.id) { abiertos.clear(); pegarAbierto = false; selPaso = ""; previo = f.id; zoom = null; }
+        if (previo !== f.id) { abiertos.clear(); pegarAbierto = false; selPaso = ""; previo = f.id; zoom = null; recorrido = false; pasoRec = ""; historialRec = []; }
         let n = parseInt(partes[2], 10);
         if (!(n >= 1 && n <= 6)) { const p = L.pasoPendiente(f, ENTREGA); n = p ? p.n : 6; history.replaceState(null, "", `#/flujo/${f.id}/${n}${informe ? "?informe=1" : ""}`); }
         renderFlujo(f, n);
@@ -1065,6 +1220,7 @@
     else if (partes[0] === "ejemplos") renderEjemplos();
     else if (partes[0] === "aprende") renderAprende(parseInt(partes[1], 10) || 0);
     else if (partes[0] === "glosario") renderGlosario();
+    else if (partes[0] === "prueba") renderPrueba(partes[1] || "");
     else { renderHome(); navR = ""; }
     if (modoEjemplo) navR = "ejemplos";
     $$("#calc-nav a").forEach(a => a.classList.toggle("active", a.dataset.r === navR));
@@ -1156,7 +1312,8 @@
     const t = e.target; let b;
     if ((b = t.closest(".info-btn"))) { const h = $("#help-" + b.dataset.info); if (!h) return; const open = h.hidden; h.hidden = !open; b.setAttribute("aria-expanded", String(open)); return; }
     const f = actual;
-    if ((b = t.closest(".fl-nodo")) && f) { seleccionar(b.dataset.paso === selPaso ? "" : b.dataset.paso); return; }
+    if ((b = t.closest(".pc-ej .fl-nodo"))) { if (!puntosEj.ver) { const id = b.dataset.paso; if (puntosEj.sel.has(id)) puntosEj.sel.delete(id); else puntosEj.sel.add(id); repPractica(); } return; }
+    if ((b = t.closest(".fl-nodo")) && f) { if (recorrido && pasoActual === 4) { irRecorrido(b.dataset.paso); return; } seleccionar(b.dataset.paso === selPaso ? "" : b.dataset.paso); return; }
     if (!(b = t.closest("[data-act]"))) return;
     const act = b.dataset.act, id = b.dataset.id;
     // --- Lista ---
@@ -1308,6 +1465,33 @@
       const partes = [r.subprocesos && plural(r.subprocesos, "subproceso", "subprocesos"), r.actores && plural(r.actores, "actor", "actores"), r.pasos && plural(r.pasos, "paso", "pasos"), r.puntos && plural(r.puntos, "punto crítico", "puntos críticos")].filter(Boolean);
       toast(`${partes.length ? "Traído del AMFE: " + L.listaY(partes) + "." : "No había nada nuevo que traer."}${r.esqueletoOmitido ? " El borrador de pasos no se ha hecho porque ya tenías pasos." : ""}`, 5000);
     }
+    else if (act === "recorrido" && f) { recorrido = !recorrido; if (recorrido) { pasoRec = selPaso || (L.primerPaso(f) || {}).id || ""; historialRec = []; } repintar(); if (recorrido) { const z = $("[data-zona='recorrido']"); if (z) z.scrollIntoView({ block: "nearest" }); } }
+    else if (act === "rec-ir" && f) irRecorrido(id);
+    else if (act === "rec-atras" && f) { const p = historialRec.pop(); if (p) irRecorrido(p, true); }
+    else if (act === "rec-inicio" && f) { historialRec = []; irRecorrido((L.primerPaso(f) || {}).id, true); }
+    else if (act === "reunion") ponerReunion(!document.body.classList.contains("modo-reunion"));
+    else if (act === "ver-cambios" && f) { verCambios = !verCambios; repintar(); }
+    else if (act === "hoja") irInforme("hoja");
+    else if (act === "ed-nueva" && f) {
+      const tipo = b.dataset.v, n = String((parseInt(f.edicion, 10) || 0) + 1).padStart(2, "0");
+      confirmar(`<p>Se creará la <b>edición ${n}</b>${tipo === "propuesto" ? ": el <b>proceso propuesto</b>, para dibujar cómo quedará tras las acciones de mejora" : ", para revisar el proceso"}. Es una copia completa; esta edición se queda como está, para comparar.</p>`, "Crear la edición", () => {
+        // En los ejemplos, la edición nueva también es de ejemplo (id «ej-…»): vive en memoria y no se mezcla con los datos
+        const c = L.nuevaEdicion(f, modoEjemplo ? () => "ej-ed-" + genId() : genId, hoy(), tipo); datos.flujos.push(c); if (!modoEjemplo) guardar(true);
+        location.hash = `#/flujo/${c.id}/3`; toast(`Edición ${c.edicion} creada. Cambia los pasos; en el dibujo verás marcados los nuevos y los cambiados.`, 4500);
+      }, { titulo: "Nueva edición", peligro: false });
+    }
+    // --- Ponte a prueba ---
+    else if (act === "quiz") {
+      const qi = Number(b.dataset.q); if (!C.TEST[qi] || qi in respuestas) return;
+      respuestas[qi] = Number(b.dataset.o); const y = window.scrollY; renderPrueba(temaPrueba); window.scrollTo(0, y);
+    }
+    else if (act === "quiz-reset") { Object.keys(respuestas).forEach(k => delete respuestas[k]); renderPrueba(temaPrueba); }
+    else if (act === "simb") { const i = Number(b.dataset.i); if (!(i in respSimb)) { respSimb[i] = b.dataset.v; repPractica(); } }
+    else if (act === "ord") { const o = ordenes[b.dataset.k]; if (!o.hecho && !o.sel.includes(Number(b.dataset.i))) { o.sel.push(Number(b.dataset.i)); if (o.sel.length === C.EJERCICIOS.ordenar[Number(b.dataset.k)].pasos.length) o.hecho = true; repPractica(); } }
+    else if (act === "ord-reset") { ordenes[b.dataset.k] = { sel: [], hecho: false }; repPractica(); }
+    else if (act === "err") { const i = Number(b.dataset.i); if (!(i in respErr)) { respErr[i] = Number(b.dataset.o); repPractica(); } }
+    else if (act === "pc-comparar") { puntosEj.ver = true; repPractica(); }
+    else if (act === "practica-reset") { [respSimb, respErr].forEach(o => Object.keys(o).forEach(k => delete o[k])); ordenes.splice(0, ordenes.length, ...C.EJERCICIOS.ordenar.map(() => ({ sel: [], hecho: false }))); puntosEj.sel.clear(); puntosEj.ver = false; renderPractica(); }
     else if (act === "ex-word" && f) exportarWord(f);
     else if (act === "ex-excel" && f) exportarExcel(f);
     else if (act === "cp-add" && f) { f.control[b.dataset.k].push({ nombre: "", cargo: "" }); tocado(f); repintar(); }
@@ -1361,7 +1545,7 @@
   $("#btn-acerca").addEventListener("click", () => { ma.hidden = false; });
   $("#btn-acerca-cerrar").addEventListener("click", () => { ma.hidden = true; });
   ma.addEventListener("click", e => { if (e.target === ma) ma.hidden = true; });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { ma.hidden = true; $("#modal-confirmar").hidden = true; } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { ma.hidden = true; $("#modal-confirmar").hidden = true; if (document.body.classList.contains("modo-reunion")) ponerReunion(false); } });
 
   // ---------- Versiones y novedades ----------
   const KEY_VERSION = "flujograma-version-vista";

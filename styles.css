@@ -1439,3 +1439,32 @@ body.ver-informe .informe-dib svg { max-height: 175mm; }
 .ctl-fila--h { grid-template-columns: 70px 150px minmax(0, 1fr) auto; }
 @media (max-width: 520px) { .ctl-fila, .ctl-fila--h { grid-template-columns: minmax(0, 1fr) auto; } .ctl-fila > .input-wrap:nth-child(2), .ctl-fila--h > .input-wrap:nth-child(3) { grid-column: 1; } }
 .ej-card--grande { grid-column: 1 / -1; }
+
+/* Recorrido, ediciones, ejercicios y hoja en blanco (entrega 4) */
+.rec-card { margin: 10px 0; padding: 14px 16px; border-radius: var(--radius-lg); border: 2px solid var(--cyan); border-left-width: 8px; background: var(--bg-2); box-shadow: var(--shadow-sm); }
+.rec-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13.5px; color: var(--text-2); }
+.rec-cab .link-btn { margin-left: auto; }
+.rec-n { font-weight: 800; color: var(--cyan); }
+.rec-sub { display: inline-flex; align-items: center; }
+.rec-txt { margin: 10px 0 4px; font-size: 22px; font-weight: 800; line-height: 1.25; }
+.rec-quien { margin: 0 0 8px; font-size: 15px; color: var(--text-2); }
+.rec-pc { margin: 8px 0; font-size: 14px; line-height: 1.6; }
+.rec-acc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.rec-acc .rec-no { background: #a20025; border-color: #a20025; color: #fff; }
+body.modo-reunion .rec-txt { font-size: 32px; }
+body.modo-reunion .lienzo { max-height: 80vh; }
+.salir-reunion { position: fixed; top: 10px; right: 10px; z-index: 50; }
+.cmp-ed { margin: 8px 0; padding: 10px 12px; border-radius: var(--radius); background: var(--bg-3); font-size: 14px; }
+.cmp-ed ul { margin: 6px 0; padding-left: 18px; }
+.cmp-nuevo, .cmp-quitado, .cmp-cambio { display: inline-block; padding: 0 6px; border-radius: 4px; font-size: 12px; font-weight: 800; color: #fff; }
+.cmp-nuevo { background: #16a34a; } .cmp-quitado { background: #be123c; } .cmp-cambio { background: #d97706; }
+.ord-op { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.ord-elegidos { margin: 6px 0; padding-left: 22px; }
+.ord-ok { color: var(--green); font-weight: 700; } .ord-mal { color: var(--red); }
+.lienzo--mini { max-height: 420px; margin: 8px 0; }
+.lienzo--mini svg { max-width: 100%; height: auto; }
+.pc-ej .fl-nodo { cursor: pointer; }
+.tipo-btn.fec-ok { border-color: var(--green); background: var(--green-dim); }
+.tipo-btn.fec-mal { border-color: var(--red); background: var(--red-dim); }
+.hoja-cab p { font-size: 15px; }
+.tabla-hoja td { height: 30px; }

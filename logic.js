@@ -976,6 +976,38 @@
     ] };
   }
 
+  // ---------- Ediciones: proceso actual y proceso propuesto (mejora G) ----------
+  // Copia completa con los mismos ids de pasos (para comparar). tipo: "actual" (revisión) | "propuesto" (cómo quedará tras las mejoras)
+  function nuevaEdicion(f, genId, fecha, tipo = "actual") {
+    const c = JSON.parse(JSON.stringify(f)), n = (parseInt(f.edicion, 10) || 0) + 1, ed = String(n).padStart(2, "0");
+    Object.assign(c, { id: genId(), edicion: ed, anteriorId: f.id, tipoEdicion: tipo === "propuesto" ? "propuesto" : "actual", validado: "", exportado: "", creado: fecha, modificado: fecha });
+    c.control.historial.push({ edicion: ed, fecha: fecha.slice(0, 10), cambio: tipo === "propuesto" ? "Proceso propuesto tras las acciones de mejora" : "Revisión del proceso" });
+    return c;
+  }
+  // Qué ha cambiado entre dos ediciones (por id de paso)
+  function compararEdiciones(a, b) {
+    const A = new Map(a.pasos.map(p => [p.id, p])), B = new Map(b.pasos.map(p => [p.id, p]));
+    const nomA = (f, id) => { const x = f.actores.find(y => y.id === id); return x ? x.nombre : ""; };
+    const sal = (f, p) => p.siguientes.map(s => (s.etiqueta || "") + ">" + s.a).sort().join(",");
+    const nuevos = b.pasos.filter(p => !A.has(p.id)), quitados = a.pasos.filter(p => !B.has(p.id)), cambiados = [];
+    b.pasos.filter(p => A.has(p.id)).forEach(p => {
+      const q = A.get(p.id), c = [];
+      if (normal(q.texto) !== normal(p.texto)) c.push(`texto: «${corto(q.texto, 40)}» → «${corto(p.texto, 40)}»`);
+      if (q.tipo !== p.tipo) c.push(`tipo: ${TIPOS[q.tipo].corto} → ${TIPOS[p.tipo].corto}`);
+      if (normal(nomA(a, q.actorId)) !== normal(nomA(b, p.actorId))) c.push(`quién: ${nomA(a, q.actorId) || "nadie"} → ${nomA(b, p.actorId) || "nadie"}`);
+      if (sal(a, q) !== sal(b, p)) c.push("cambian las flechas");
+      if (c.length) cambiados.push({ paso: p, cambios: c });
+    });
+    const traspasos = f => flechas(f).filter(e => { const x = pasoDe(f, e.de), y = pasoDe(f, e.a); return x.actorId && y.actorId && x.actorId !== y.actorId; }).length;
+    return { nuevos, quitados, cambiados, pasos: [a.pasos.length, b.pasos.length], traspasos: [traspasos(a), traspasos(b)], decisiones: [a, b].map(f => f.pasos.filter(p => p.tipo === "decision").length), puntos: [a.puntos.length, b.puntos.length] };
+  }
+
+  // ---------- Vista recorrido (mejora F) ----------
+  // Por dónde empezar: el primer inicio (o el primer paso)
+  function primerPaso(f) { const ent = entradas(f); return f.pasos.find(p => esInicio(f, p, ent)) || f.pasos[0] || null; }
+  function salidasDe(f, p) { return p.siguientes.map(s => ({ s, q: pasoDe(f, s.a) })).filter(x => x.q).sort((x, y) => ({ si: 0, "": 1, no: 2 }[x.s.etiqueta] ?? 1) - ({ si: 0, "": 1, no: 2 }[y.s.etiqueta] ?? 1)); }
+  function entradasDe(f, p) { return (entradas(f).get(p.id) || []).map(e => pasoDe(f, e.de)).filter(Boolean); }
+
   // ---------- Saneado por esquema (lo que se carga o se importa nunca se usa sin pasar por aquí) ----------
   // [max] = texto; "b" = sí/no (si falta, el valor de la fábrica); "id" = id propio; "ref" = id de otro objeto; "ent" = entero ≥ 0;
   // {en} = enumerado; {lista: max, max} = lista de textos; {de: esquema, max} = lista de objetos; {obj: esquema} = objeto anidado
@@ -1066,6 +1098,7 @@
     FORMATO_INTERCAMBIO, VERSION_INTERCAMBIO, paqueteIntercambio, leerIntercambio,
     leerAmfe, actoresDeRoles, traerDeAmfe, falloAmfe, MARCO_SUG, desplazar, conMarco, dibujar,
     salidasTexto, documentoProceso, ESTILOS_XLSX, hojasExcel,
+    nuevaEdicion, compararEdiciones, primerPaso, salidasDe, entradasDe,
     adivinarActor, leerLista, leerTabla, leerPegado, incorporarPasos,
     insertarDespues, quitarPaso, cambiarTipo, ponerSalida, anadirActores,
     partir, medida, disponer,
