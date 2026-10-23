@@ -79,6 +79,6 @@ Publicada el 2026-10-22 (v2026.04) con permiso del autor: repositorio público `
 - **Entrega 3 (hecha, 2026-10-22, v2026.03)**: Word con el dibujo como imagen (comprobado en LibreOffice), Excel de 4 hojas, «Traer de AMFE» (comprobado con el paquete real de AMFE), nombres de los fallos en los puntos críticos, marco de mapa de procesos (dibujo, imagen, PDF, Word y draw.io), control del documento, ejemplo de Urgencias; 360 tests.
 - **Entrega 4 (hecha, 2026-10-22, v2026.04)**: Ponte a prueba (15 preguntas y 4 ejercicios: símbolos, ordenar, encontrar el error, señalar puntos críticos), 3 minicasos con errores, Aprende tema 7, vista recorrido y modo reunión, ediciones actual/propuesto con comparación y cambios marcados en el dibujo, hoja en blanco; 510 tests. **Todas las entregas del diseño hechas.**
 - Entrega 4: ver el diseño (sección 13).
-- Publicada (2026-10-22, v2026.04) en https://cjgaland.github.io/flujograma/.
+- Publicada (2026-10-22, v2026.04) en https://cjgaland.github.io/flujograma/. Última publicación: v2026.06 (2026-10-23), con el motor para Mapa de Riesgos.
 - Enlazada desde todas las apps hermanas publicadas (2026-10-22). Pendiente: programar «Traer de Flujograma» en AMFE y en Mapa de Riesgos (sesiones de esos proyectos); manual de usuario si lo pide.
 - Sin probar: el PDF en iPhone real (la vista previa oculta no ejecuta `requestAnimationFrame`).
