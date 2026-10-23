@@ -245,12 +245,13 @@ t("hoja en blanco: una calle por actor", (D.callesEnBlanco(["A", "B", "C"]).matc
 t("contrato: MOTOR = 1", L.MOTOR === 1);
 const CONTRATO_MAPA = ["TIPOS", "nuevoActor", "nuevoPaso", "leerPegado", "incorporarPasos", "avisosPasos", "errores", "rolesSinCalle", "propuestasPuntos",
   "disponer", "dibujar", "MARCO_SUG", "sanearFlujo", "leerIntercambio", "paqueteIntercambio",
-  "lleno", "corto", "normal", "plural", "listaY", "sinTildes", "ORDEN_TIPOS", "ACTORES_SUG", "nuevoFlujo", "nuevoSubproceso", "nuevaFlecha", "nuevoPunto", "siguienteNum", "colorLibre", "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "avisosProceso", "avisosActores", "progreso", "resumen", "aceptarPropuesta", "insertarDespues", "quitarPaso", "cambiarTipo", "ponerSalida", "anadirActores"];
+  "lleno", "corto", "normal", "plural", "listaY", "sinTildes", "ORDEN_TIPOS", "ACTORES_SUG", "nuevoFlujo", "nuevoSubproceso", "nuevaFlecha", "nuevoPunto", "siguienteNum", "colorLibre", "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "avisosProceso", "avisosActores", "progreso", "resumen", "aceptarPropuesta", "insertarDespues", "quitarPaso", "cambiarTipo", "ponerSalida", "anadirActores", "nuevoControl"];
 CONTRATO_MAPA.forEach(k => t(`contrato: LogicaFlujo.${k}`, k in L && L[k] != null && L.CONTRATO.includes(k)));
 ["svg", "drawio", "leyenda"].forEach(k => t(`contrato: Dibujo.${k}`, typeof D[k] === "function"));
 t("contrato: TIPOS con los seis símbolos", ["terminal", "actividad", "decision", "datos", "documento", "externo"].every(k => L.TIPOS[k] && L.TIPOS[k].relleno));
 t("contrato: MARCO_SUG con estratégicos y soporte", L.MARCO_SUG.estrategicos.length && L.MARCO_SUG.soporte.length);
 t("contrato: nuevoPaso(id, num, tipo)", (() => { const p = L.nuevoPaso("x1", 7, "decision"); return p.id === "x1" && p.num === 7 && p.tipo === "decision" && Array.isArray(p.siguientes); })());
+t("contrato: nuevoControl() con elaborado, revisado, aprobado e historial", (() => { const c = L.nuevoControl(); return ["elaborado", "revisado", "aprobado"].every(k => Array.isArray(c[k]) && c[k][0] && "nombre" in c[k][0] && "cargo" in c[k][0]) && c.historial[0].edicion === "00"; })());
 t("contrato: nuevoActor(id, nombre)", L.nuevoActor("a1", "Celador").nombre === "Celador");
 t("contrato: dibujar devuelve el dibujo con iconos", (() => { const d = L.dibujar(L.sanearFlujo(clon(C.EJEMPLOS.flujos.find(x => x.id === "ej-fl-urgencias")), genId, "x")); return d.nodos.length && d.iconos.length && d.marco; })());
 // Iconos por nivel de IPR y borde de crítico (los pone Mapa de Riesgos en los puntos que pasa a dibujar)

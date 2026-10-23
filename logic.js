@@ -17,7 +17,9 @@
   const CONTRATO = ["TIPOS", "nuevoActor", "nuevoPaso", "leerPegado", "incorporarPasos", "avisosPasos", "errores", "rolesSinCalle", "propuestasPuntos",
     "disponer", "dibujar", "MARCO_SUG", "sanearFlujo", "leerIntercambio", "paqueteIntercambio", "NIVELES_IPR", "nivelDeIPR",
     // Ampliado el 2026-10-23 a petición de Mapa de Riesgos (entrega 1: sus pasos 3 y 4 usan estas también)
-    "lleno", "corto", "normal", "plural", "listaY", "sinTildes", "ORDEN_TIPOS", "ACTORES_SUG", "nuevoFlujo", "nuevoSubproceso", "nuevaFlecha", "nuevoPunto", "siguienteNum", "colorLibre", "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "avisosProceso", "avisosActores", "progreso", "resumen", "aceptarPropuesta", "insertarDespues", "quitarPaso", "cambiarTipo", "ponerSalida", "anadirActores"];
+    "lleno", "corto", "normal", "plural", "listaY", "sinTildes", "ORDEN_TIPOS", "ACTORES_SUG", "nuevoFlujo", "nuevoSubproceso", "nuevaFlecha", "nuevoPunto", "siguienteNum", "colorLibre", "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "avisosProceso", "avisosActores", "progreso", "resumen", "aceptarPropuesta", "insertarDespues", "quitarPaso", "cambiarTipo", "ponerSalida", "anadirActores",
+    // Entrega 4 de Mapa de Riesgos: crea el control documental de cada mapa (y añade `ubicacion` a cada persona por su cuenta)
+    "nuevoControl"];
   const URL_AMFE = "https://cjgaland.github.io/amfe/";
   const URL_AUD = "https://cjgaland.github.io/auditorias/";
   const URL_IND = "https://cjgaland.github.io/indicadores-calidad/";
