@@ -15,8 +15,11 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.05";
+  const APP_VERSION = "2026.06";
   const NOVEDADES = [
+    { version: "2026.06", fecha: "Octubre 2026", titulo: "Avisos coloreados por IPR y preparación para Mapa de Riesgos", cambios: [
+      "Si has traído el AMFE (paso 1), el aviso de cada punto crítico toma el color del IPR más alto de sus fallos: rojo muy alto, naranja alto, amarillo medio y verde bajo, como en el AMFE. Sale en el dibujo, en la imagen, en el PDF, en Word y en draw.io.",
+      "Por dentro: la futura app Mapa de Riesgos podrá usar el motor y el dibujo de Flujograma tal cual, sin copiarlos."] },
     { version: "2026.05", fecha: "Octubre 2026", titulo: "Nueva app hermana: DAFO · CAME", cambios: [
       "Enlace a la nueva app hermana DAFO · CAME (análisis DAFO de una unidad, estrategias CAME y plan de acción) en la portada y en «Acerca de». La portada enlaza también a Indicadores y a Tamaño Muestral."] },
     { version: "2026.04", fecha: "Octubre 2026", titulo: "Ponte a prueba, recorrido, modo reunión y ediciones", cambios: [
@@ -645,6 +648,7 @@
         <p>Escribe cada uno como <b>lo que puede salir mal</b> («No se coloca la pulsera identificativa»), no como su consecuencia («Error de identidad»): esa irá en la columna «efecto» del AMFE.</p>
         ${practica("Toca un paso del dibujo para marcar en él un punto crítico. En el dibujo sale un aviso con su número, como en el mapa de riesgos del curso.")}`)}
       ${lienzoHtml(f)}
+      ${f.amfe && f.amfe.fallos.some(x => x.ipr) ? `<p class="field-sub leyenda-niv"><span class="niv-c" style="background:#e51400"></span>IPR ≥ 300 <span class="niv-c" style="background:#f97316"></span>≥ 200 <span class="niv-c" style="background:#facc15"></span>≥ 100 <span class="niv-c" style="background:#22c55e"></span>menor · color del aviso según el IPR más alto de sus fallos del AMFE (los avisos sin números de fallo salen en rojo).</p>` : ""}
       <h2 class="sec-t">Propuestas de la app <span class="contador" data-zona="nprop">${nP}</span></h2>
       <p class="field-sub">Lugares del proceso donde suele haber riesgo. Añade los que tengan sentido en tu unidad y descarta los demás.</p>
       <div data-zona="propuestas">${propuestasHtml(f)}</div>

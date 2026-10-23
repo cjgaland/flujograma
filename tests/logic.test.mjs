@@ -240,6 +240,35 @@ t("recorrido: salidas de una decisión, Sí primero", L.salidasDe(e0, e0.pasos.f
 t("recorrido: de dónde viene un paso", L.entradasDe(e0, e0.pasos.find(p => p.num === 10)).map(p => p.num).sort((a, b) => a - b).join() === "8,9");
 t("hoja en blanco: una calle por actor", (D.callesEnBlanco(["A", "B", "C"]).match(/stroke-dasharray/g) || []).length === 6);
 
+// ---------- Contrato con Mapa de Riesgos (usa este motor en vivo: window.LogicaFlujo y window.Dibujo) ----------
+// Si falla: no quites ni cambies el significado de estas funciones sin comprobar Mapa de Riesgos y subir MOTOR.
+t("contrato: MOTOR = 1", L.MOTOR === 1);
+const CONTRATO_MAPA = ["TIPOS", "nuevoActor", "nuevoPaso", "leerPegado", "incorporarPasos", "avisosPasos", "errores", "rolesSinCalle", "propuestasPuntos",
+  "disponer", "dibujar", "MARCO_SUG", "sanearFlujo", "leerIntercambio", "paqueteIntercambio"];
+CONTRATO_MAPA.forEach(k => t(`contrato: LogicaFlujo.${k}`, k in L && L[k] != null && L.CONTRATO.includes(k)));
+["svg", "drawio", "leyenda"].forEach(k => t(`contrato: Dibujo.${k}`, typeof D[k] === "function"));
+t("contrato: TIPOS con los seis símbolos", ["terminal", "actividad", "decision", "datos", "documento", "externo"].every(k => L.TIPOS[k] && L.TIPOS[k].relleno));
+t("contrato: MARCO_SUG con estratégicos y soporte", L.MARCO_SUG.estrategicos.length && L.MARCO_SUG.soporte.length);
+t("contrato: nuevoPaso(id, num, tipo)", (() => { const p = L.nuevoPaso("x1", 7, "decision"); return p.id === "x1" && p.num === 7 && p.tipo === "decision" && Array.isArray(p.siguientes); })());
+t("contrato: nuevoActor(id, nombre)", L.nuevoActor("a1", "Celador").nombre === "Celador");
+t("contrato: dibujar devuelve el dibujo con iconos", (() => { const d = L.dibujar(L.sanearFlujo(clon(C.EJEMPLOS.flujos.find(x => x.id === "ej-fl-urgencias")), genId, "x")); return d.nodos.length && d.iconos.length && d.marco; })());
+// Iconos por nivel de IPR y borde de crítico (los pone Mapa de Riesgos en los puntos que pasa a dibujar)
+t("nivel de IPR: cortes de AMFE", ["", "bajo", "medio", "alto", "muyalto"].join() === [0, 99, 100, 200, 300].map(L.nivelDeIPR).join());
+const fN = L.sanearFlujo(clon(CONST()), genId, "x");
+fN.puntos[0].nivel = "alto"; fN.puntos[1].critico = true; fN.puntos[2].nivel = "bajo"; fN.puntos[3].nivel = "nada";
+const icN = L.disponer(fN).iconos, porPaso = id => icN.find(ic => ic.pasoId === id);
+t("icono: nivel del punto", porPaso(fN.puntos[0].pasoId).nivel === "alto" && porPaso(fN.puntos[2].pasoId).nivel === "bajo");
+t("icono: crítico", porPaso(fN.puntos[1].pasoId).critico === true && porPaso(fN.puntos[0].pasoId).critico === false);
+t("icono: nivel desconocido → sin nivel", porPaso(fN.puntos[3].pasoId).nivel === "");
+const svN = D.svg(L.disponer(fN));
+t("SVG: caja naranja para alto, verde para bajo y borde negro para crítico", svN.includes('fill="#f97316"') && svN.includes('fill="#22c55e"') && svN.includes('stroke="#000" stroke-width="3"'));
+const dxN = D.drawio(L.disponer(fN));
+t("draw.io: colores y borde de crítico", dxN.includes("fillColor=#f97316") && dxN.includes("strokeWidth=3;"));
+t("sin nivel ni crítico: como siempre (rojo)", (() => { const s0 = D.svg(L.disponer(L.sanearFlujo(clon(CONST()), genId, "x"))); return s0.includes('fill="#e51400" stroke="#b20000"') && !s0.includes("#f97316"); })());
+const fG = L.sanearFlujo(clon(CONST()), genId, "x"); fG.amfe = { id: "a", titulo: "", traido: "", fallos: [{ num: 4, subproceso: "", fallo: "x", ipr: 343, prioritario: true }] }; fG.puntos[0].fallos = ["4"];
+t("icono: nivel sacado del IPR del AMFE traído", L.disponer(fG).iconos.find(ic => ic.pasoId === fG.puntos[0].pasoId).nivel === "muyalto");
+t("el saneado no guarda nivel ni crítico (los calcula quien dibuja)", (() => { const z = L.sanearFlujo(clon(fN), genId, "x"); return z.puntos.every(x => !("nivel" in x) && !("critico" in x)); })());
+
 // ---------- Saneado ----------
 const sucio = { flujos: [{ id: "a", pasos: [{ id: "p1", num: 1, tipo: "raro", siguientes: [{ a: "p1" }, { a: "noexiste" }, { a: "p2", etiqueta: "si" }], actorId: "fantasma" }, { id: "p2", num: 1, tipo: "decision" }, { id: "p1", num: 3 }], vista: { subprocesos: false } }, "basura"] };
 const s = L.sanearDatos(sucio, genId, "x");

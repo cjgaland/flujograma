@@ -11,6 +11,13 @@ Es una **herramienta** del ecosistema (funciona sola) y la pieza visual de la fu
 
 Autoría (idéntica en el pie de index.html, «Acerca de» y el README; orden alfabético, sin centro de trabajo): Carlos J. Galán Doval (Médico de Familia · Técnico en Calidad y Seguridad del Paciente) y Rafael J. Romero de Castilla Gil (Médico de Familia · Responsable del Área de Calidad y Seguridad del Paciente), Área de Gestión Sanitaria Sur de Córdoba · Andalucía.
 
+## 1 bis. Contrato con Mapa de Riesgos (motor en vivo) — LEER ANTES DE TOCAR `logic.js` O `dibujo.js`
+La app **Mapa de Riesgos** no copia este código: carga en vivo `../flujograma/logic.js` (como `window.LogicaFlujo`) y `../flujograma/dibujo.js` (`window.Dibujo`) desde el mismo dominio (diseño de Mapa de Riesgos, sección 6.2). Por eso:
+- `logic.js` se publica como `window.Logica` **y** `window.LogicaFlujo`, con `MOTOR = 1` y la lista `CONTRATO`.
+- **No quites ni cambies el significado** de estas funciones sin comprobar antes Mapa de Riesgos (`/Users/Trabajo/Desktop/Mapa de Riesgos/Aplicación`, sus tests cargan este motor) y **subir `MOTOR`**: `TIPOS`, `nuevoActor`, `nuevoPaso`, `leerPegado`, `incorporarPasos`, `avisosPasos`, `errores`, `rolesSinCalle`, `propuestasPuntos`, `disponer`, `dibujar`, `MARCO_SUG`, `sanearFlujo`, `leerIntercambio`, `paqueteIntercambio`, `NIVELES_IPR`, `nivelDeIPR`; y de `Dibujo`: `svg`, `drawio`, `leyenda`. Añadir funciones o campos nuevos sí se puede sin subir `MOTOR`.
+- El test «contrato» de `tests/logic.test.mjs` lo comprueba. Si falla, no se publica.
+- Iconos de punto crítico: un punto puede traer `nivel` (muyalto|alto|medio|bajo, cortes de IPR de AMFE ≥300/200/100) y `critico` (borde negro grueso). No se guardan (el saneado los quita): los pone quien dibuja (Mapa de Riesgos). Sin `nivel`, Flujograma lo saca del IPR más alto de los fallos del AMFE traído (`f.amfe`); sin nada, el aviso sale rojo como siempre.
+
 ## 2. Arquitectura
 Base copiada de `AMFE/Aplicación` (mismos patrones). Archivos:
 - `index.html` — esqueleto, cabecera, nav, franja de ejemplo, modales (bienvenida, Acerca de, novedades, confirmar), `<input type=file>` para importar.
@@ -46,7 +53,7 @@ Ejes abstractos: `v` = sentido del proceso (filas), `u` = ancho (calles). En ver
 - Por defecto (sin respuesta expresa): nombre visible «Flujograma · Diagramas de flujo de procesos», repositorio `cjgaland/flujograma`.
 
 ## 4. Entorno y pruebas
-- Node v26. `node tests/logic.test.mjs` (510 comprobaciones en la entrega 4; las de «Traer de AMFE» usan el paquete real de `../../AMFE/Aplicación` si está al lado). Con `GUARDAR=<carpeta>` guarda un .docx y un .xlsx de prueba; se comprueban con `/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to pdf`.
+- Node v26. `node tests/logic.test.mjs` (543 comprobaciones con el contrato de Mapa de Riesgos; las de «Traer de AMFE» usan el paquete real de `../../AMFE/Aplicación` si está al lado). Con `GUARDAR=<carpeta>` guarda un .docx y un .xlsx de prueba; se comprueban con `/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to pdf`.
 - Servir: `cd "/Users/Trabajo/Desktop/Flujograma/Aplicación" && python3 -m http.server 8769` (en segundo plano) y abrir la vista previa `app-flujograma` de `/Users/Trabajo/Desktop/Flujograma/.claude/launch.json`.
 - Revisar en escritorio y en móvil (360 px: `document.documentElement.scrollWidth === 360`) y en modo oscuro. El dibujo se puede pasar a PNG para mirarlo con `qlmanage -t -s 1400 -o <carpeta> archivo.svg`.
 - Iconos: `icon-512.svg` → `qlmanage -t -s 512` y tamaños con `sips -z`.

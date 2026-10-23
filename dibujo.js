@@ -35,10 +35,13 @@
   }
   const camino = pts => "M" + pts.map(p => `${r1(p[0])} ${r1(p[1])}`).join("L");
 
-  // Aviso de punto crítico: triángulo amarillo y caja roja con los números (como el mapa de riesgos del curso)
+  // Aviso de punto crítico: triángulo amarillo y caja roja con los números (como el mapa de riesgos del curso).
+  // Opcional: `nivel` (muyalto|alto|medio|bajo) colorea la caja por IPR y `critico` le pone un borde negro grueso.
+  const NIVEL_COL = { muyalto: ["#e51400", "#b20000", "#ffff00"], alto: ["#f97316", "#c2410c", "#000000"], medio: ["#facc15", "#a16207", "#000000"], bajo: ["#22c55e", "#15803d", "#000000"] };
+  const colIcono = ic => NIVEL_COL[ic.nivel] || NIVEL_COL.muyalto;
   function icono(ic) {
-    const { x, y, w, h } = ic;
-    return `<g class="fl-icono" data-paso="${esc(ic.pasoId)}"><rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${h}" rx="2" fill="#e51400" stroke="#b20000"/><path d="M${r1(x + 12)} ${r1(y + 3)}L${r1(x + 21)} ${r1(y + h - 3)}H${r1(x + 3)}Z" fill="#ffff00" stroke="#b09500" stroke-linejoin="round"/><text x="${r1(x + 12)}" y="${r1(y + h - 6.5)}" text-anchor="middle" font-size="9" font-weight="700" fill="#000">!</text><text x="${r1(x + 26)}" y="${r1(y + h / 2)}" dominant-baseline="central" font-size="11" font-weight="700" fill="#ffff00">${esc(ic.texto)}</text></g>`;
+    const { x, y, w, h } = ic, [rel, bor, letra] = colIcono(ic), borde = ic.critico ? 'stroke="#000" stroke-width="3"' : `stroke="${bor}"`;
+    return `<g class="fl-icono${ic.nivel ? " fl-icono--" + ic.nivel : ""}${ic.critico ? " fl-icono--critico" : ""}" data-paso="${esc(ic.pasoId)}"><rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${h}" rx="2" fill="${rel}" ${borde}/><path d="M${r1(x + 12)} ${r1(y + 3)}L${r1(x + 21)} ${r1(y + h - 3)}H${r1(x + 3)}Z" fill="#ffff00" stroke="#b09500" stroke-linejoin="round"/><text x="${r1(x + 12)}" y="${r1(y + h - 6.5)}" text-anchor="middle" font-size="9" font-weight="700" fill="#000">!</text><text x="${r1(x + 26)}" y="${r1(y + h / 2)}" dominant-baseline="central" font-size="11" font-weight="700" fill="${letra}">${esc(ic.texto)}</text></g>`;
   }
 
   // Marco del mapa de procesos (Documento Final): estratégicos en rojo arriba, proceso clave en naranja a la izquierda, soporte en amarillo abajo
@@ -201,7 +204,8 @@
     });
     d.uniones.forEach(u => celda(`<mxCell id="${nid("union")}" value="" style="endArrow=none;html=1;rounded=0;dashed=1;strokeColor=#6B7280;" edge="1" parent="1" source="${ids.get(u.de)}" target="${ids.get(u.a)}"><mxGeometry relative="1" as="geometry" /></mxCell>`));
     (d.iconos || []).forEach(ic => {
-      celda(`<mxCell id="${nid("aviso")}" value="${xa(ic.texto)}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e51400;strokeColor=#B20000;fontColor=#FFFF00;fontStyle=1;fontSize=10;align=right;spacingRight=4;" vertex="1" parent="1">${geo(ic.x, ic.y, ic.w, ic.h)}</mxCell>`);
+      const [rel, bor, letra] = colIcono(ic);
+      celda(`<mxCell id="${nid("aviso")}" value="${xa(ic.texto)}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=${rel};strokeColor=${ic.critico ? "#000000" : bor};${ic.critico ? "strokeWidth=3;" : ""}fontColor=${letra};fontStyle=1;fontSize=10;align=right;spacingRight=4;" vertex="1" parent="1">${geo(ic.x, ic.y, ic.w, ic.h)}</mxCell>`);
       celda(`<mxCell id="${nid("aviso-t")}" value="" style="triangle;direction=north;whiteSpace=wrap;html=1;fillColor=#FFFF00;strokeColor=#B09500;" vertex="1" parent="1">${geo(ic.x + 3, ic.y + 3, 18, ic.h - 6)}</mxCell>`);
     });
     const ancho = Math.ceil(d.ancho), alto = Math.ceil(d.alto + DY);
@@ -221,7 +225,7 @@
     return p.join("");
   }
 
-  const API = { svg, leyenda, drawio, callesEnBlanco, COLORES: COL };
+  const API = { svg, leyenda, drawio, callesEnBlanco, COLORES: COL, NIVEL_COL };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   else raiz.Dibujo = API;
 })(typeof window !== "undefined" ? window : this);

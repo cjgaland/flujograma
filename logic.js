@@ -11,6 +11,11 @@
   "use strict";
 
   const VERSION_DATOS = 1;
+  // Versión del «contrato» con Mapa de Riesgos, que usa este motor en vivo (`window.LogicaFlujo`).
+  // Subirla solo si se quita o cambia el significado de una función de CONTRATO (ver CLAUDE.md).
+  const MOTOR = 1;
+  const CONTRATO = ["TIPOS", "nuevoActor", "nuevoPaso", "leerPegado", "incorporarPasos", "avisosPasos", "errores", "rolesSinCalle", "propuestasPuntos",
+    "disponer", "dibujar", "MARCO_SUG", "sanearFlujo", "leerIntercambio", "paqueteIntercambio", "NIVELES_IPR", "nivelDeIPR"];
   const URL_AMFE = "https://cjgaland.github.io/amfe/";
   const URL_AUD = "https://cjgaland.github.io/auditorias/";
   const URL_IND = "https://cjgaland.github.io/indicadores-calidad/";
@@ -763,17 +768,26 @@
       const r = vertical ? { x: DIB.MARGEN, y: v1, w: anchoU - 2 * DIB.MARGEN, h: v2 - v1 } : { x: v1, y: DIB.MARGEN, w: v2 - v1, h: anchoU - 2 * DIB.MARGEN };
       return Object.assign({ subprocesoId: s.id, nombre: s.nombre, color: COLOR_SUB_HEX[Number(s.color) || 0], orden: i + 1 }, r);
     }).filter(Boolean);
-    // Puntos críticos: un aviso por paso, con sus números, en la esquina superior derecha (como el Documento Final)
+    // Puntos críticos: un aviso por paso, con sus números, en la esquina superior derecha (como el Documento Final).
+    // Color opcional por nivel de IPR (lo da el punto en `nivel`, o sale del IPR de sus fallos si se trajo el AMFE)
+    // y borde de «crítico» (`critico`: fallo crítico o de gravedad 9–10, lo da Mapa de Riesgos).
+    const iprFallo = n => { const x = (f.amfe && f.amfe.fallos || []).find(y => String(y.num) === String(n)); return x && x.ipr ? x.ipr : 0; };
+    const nivelPunto = x => NIVELES_IPR.some(v => v.k === x.nivel) ? x.nivel : nivelDeIPR(Math.max(0, ...(x.fallos || []).map(iprFallo)));
     const iconos = [];
     nodos.forEach(n => {
       const l = (f.puntos || []).filter(x => x.pasoId === n.pasoId).sort((a, b) => a.num - b.num); if (!l.length) return;
       const nums = l.map(x => x.num), txtN = nums.join(", "), w = 26 + txtN.length * 6.6 + 8, h = 20;
       const x = n.tipo === "decision" ? n.x + n.w * 0.62 : n.x + n.w - w + 10, y = n.tipo === "decision" ? n.y + n.h * 0.1 - h / 2 : n.y - h + 6;
-      iconos.push({ pasoId: n.pasoId, x, y, w, h, nums, texto: txtN, fallos: [...new Set(l.flatMap(p => p.fallos || []))] });
+      const niv = l.map(nivelPunto).filter(Boolean).sort((a, b) => NIVELES_IPR.findIndex(v => v.k === a) - NIVELES_IPR.findIndex(v => v.k === b))[0] || "";
+      iconos.push({ pasoId: n.pasoId, x, y, w, h, nums, texto: txtN, fallos: [...new Set(l.flatMap(p => p.fallos || []))], nivel: niv, critico: l.some(p => p.critico === true) });
     });
     const [ancho, alto] = vertical ? [anchoU, largoV] : [largoV, anchoU];
     return { version: 1, orientacion: vertical ? "vertical" : "horizontal", letra: grande ? "grande" : "normal", ancho: Math.ceil(ancho), alto: Math.ceil(alto), cabecera: vertical ? DIB.CABV : DIB.CABH, banda: hayBandas ? DIB.BANDA : 0, calles: callesD, bandas, nodos, flechas: flechasD, uniones, iconos };
   }
+
+  // ---------- Niveles de IPR (los mismos cortes que AMFE y Auditorías) ----------
+  const NIVELES_IPR = [{ k: "muyalto", min: 300, nom: "Muy alto" }, { k: "alto", min: 200, nom: "Alto" }, { k: "medio", min: 100, nom: "Medio" }, { k: "bajo", min: 1, nom: "Bajo" }];
+  const nivelDeIPR = v => { const n = Number.isFinite(v) && v > 0 ? NIVELES_IPR.find(x => v >= x.min) : null; return n ? n.k : ""; };
 
   // ---------- Paquete de intercambio «flujograma-procesos» (para «Traer de Flujograma» en AMFE y Mapa de Riesgos) ----------
   // Forma FIJA y versionada (Diseño, 7.3): las otras apps leen esto, nunca «flujograma-datos». Añadir campos no sube la
@@ -1087,7 +1101,7 @@
   }
 
   const API = {
-    VERSION_DATOS, URL_AMFE, URL_AUD, URL_IND, URL_TM, URL_DAFO,
+    VERSION_DATOS, MOTOR, CONTRATO, NIVELES_IPR, nivelDeIPR, URL_AMFE, URL_AUD, URL_IND, URL_TM, URL_DAFO,
     lleno, sinTildes, num, corto, normal, plural, listaY, mayuscula, minuscula,
     PASOS, TIPOS, ORDEN_TIPOS, COLORES_SUB, COLOR_SUB_HEX, ACTORES_SUG,
     nuevoFlujo, nuevaVista, nuevoActor, nuevoSubproceso, nuevoPaso, nuevaFlecha, nuevoPunto, nuevoControl, siguienteNum, colorLibre,
@@ -1106,5 +1120,6 @@
     ESQ, sanear, sanearFlujo, sanearDatos, fusionar
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
-  else raiz.Logica = API;
+  // También como `window.LogicaFlujo`, para que Mapa de Riesgos lo cargue junto al motor de AMFE sin que se pisen
+  else { raiz.Logica = API; raiz.LogicaFlujo = API; }
 })(typeof window !== "undefined" ? window : this);

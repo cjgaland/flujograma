@@ -1468,3 +1468,5 @@ body.modo-reunion .lienzo { max-height: 80vh; }
 .tipo-btn.fec-mal { border-color: var(--red); background: var(--red-dim); }
 .hoja-cab p { font-size: 15px; }
 .tabla-hoja td { height: 30px; }
+.leyenda-niv { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.niv-c { display: inline-block; width: 14px; height: 12px; border-radius: 2px; margin-left: 4px; }
