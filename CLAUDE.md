@@ -1,11 +1,11 @@
 # CLAUDE.md — Flujograma
 
-> Documento común a todas las apps (lista, carpetas, identidad visual e intercambio de datos): `/Users/Trabajo/Desktop/Ecosistema Calidad/ECOSISTEMA.md`.
+> Documento común a todas las apps (lista, carpetas, identidad visual e intercambio de datos): `/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/ECOSISTEMA.md`.
 
-Guía de referencia para el desarrollo asistido por IA. Léela antes de proponer cambios. Responder siempre en español y en lenguaje claro (el autor no es programador). El diseño completo, las decisiones del autor y el plan por entregas están en `/Users/Trabajo/Desktop/Flujograma/Diseño/DISEÑO_FLUJOGRAMA.md` (léelo también al empezar una sesión).
+Guía de referencia para el desarrollo asistido por IA. Léela antes de proponer cambios. Responder siempre en español y en lenguaje claro (el autor no es programador). El diseño completo, las decisiones del autor y el plan por entregas están en `/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Flujograma/Diseño/DISEÑO_FLUJOGRAMA.md` (léelo también al empezar una sesión).
 
 ## 1. Descripción
-PWA estática (sin build, sin dependencias, sin CDN) para **dibujar cualquier proceso sanitario como un flujograma sin saber dibujar**: se escriben los pasos (tipo, quién lo hace, a qué paso sigue) y la app dibuja sola el diagrama en SVG con los símbolos normalizados del curso, por **calles de actores** y agrupado por **subprocesos**. Después se marcan encima los **puntos críticos** y se exporta a imagen, PDF y draw.io. Nace del curso «Elaboración de Mapas de Riesgo en Procesos Sanitarios» (material en `/Users/Trabajo/Desktop/Mapa de Riesgos/Curso Mapa de Riesgo/`). Herramienta docente y de apoyo.
+PWA estática (sin build, sin dependencias, sin CDN) para **dibujar cualquier proceso sanitario como un flujograma sin saber dibujar**: se escriben los pasos (tipo, quién lo hace, a qué paso sigue) y la app dibuja sola el diagrama en SVG con los símbolos normalizados del curso, por **calles de actores** y agrupado por **subprocesos**. Después se marcan encima los **puntos críticos** y se exporta a imagen, PDF y draw.io. Nace del curso «Elaboración de Mapas de Riesgo en Procesos Sanitarios» (material en `/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Mapa de Riesgos/Curso Mapa de Riesgo/`). Herramienta docente y de apoyo.
 
 Es una **herramienta** del ecosistema (funciona sola) y la pieza visual de la futura superaplicación **Mapa de Riesgos**. Hermana de AMFE, Auditorías, Indicadores, Tamaño Muestral, DAFO · CAME y Mapa de Riesgos (las seis enlazadas desde la portada y «Acerca de»; `L.URL_AMFE`, `L.URL_AUD`, `L.URL_IND`, `L.URL_TM`, `L.URL_DAFO`, `L.URL_MAPA`; DAFO, Indicadores y Tamaño Muestral en la portada desde v2026.05, Mapa de Riesgos = https://cjgaland.github.io/mapa-riesgos/ desde v2026.07): mismos tokens CSS, modo claro/oscuro, modales, SW network-first con aviso «Actualizar».
 
@@ -14,7 +14,7 @@ Autoría (idéntica en el pie de index.html, «Acerca de» y el README; orden al
 ## 1 bis. Contrato con Mapa de Riesgos (motor en vivo) — LEER ANTES DE TOCAR `logic.js` O `dibujo.js`
 La app **Mapa de Riesgos** no copia este código: carga en vivo `../flujograma/logic.js` (como `window.LogicaFlujo`) y `../flujograma/dibujo.js` (`window.Dibujo`) desde el mismo dominio (diseño de Mapa de Riesgos, sección 6.2). Por eso:
 - `logic.js` se publica como `window.Logica` **y** `window.LogicaFlujo`, con `MOTOR = 1` y la lista `CONTRATO`.
-- **No quites ni cambies el significado** de estas funciones sin comprobar antes Mapa de Riesgos (`/Users/Trabajo/Desktop/Mapa de Riesgos/Aplicación`, sus tests cargan este motor) y **subir `MOTOR`**: `TIPOS`, `nuevoActor`, `nuevoPaso`, `leerPegado`, `incorporarPasos`, `avisosPasos`, `errores`, `rolesSinCalle`, `propuestasPuntos`, `disponer`, `dibujar`, `MARCO_SUG`, `sanearFlujo`, `leerIntercambio`, `paqueteIntercambio`, `NIVELES_IPR`, `nivelDeIPR`, y desde el 2026-10-23 también `lleno`, `corto`, `normal`, `plural`, `listaY`, `sinTildes`, `ORDEN_TIPOS`, `ACTORES_SUG`, `nuevoFlujo`, `nuevoSubproceso`, `nuevaFlecha`, `nuevoPunto`, `siguienteNum`, `colorLibre`, `pasoDe`, `actorDe`, `buscaActor`, `sugerirObjetivo`, `avisosProceso`, `avisosActores`, `progreso`, `resumen`, `aceptarPropuesta`, `insertarDespues`, `quitarPaso`, `cambiarTipo`, `ponerSalida`, `anadirActores`, `nuevoControl` (la lista viva está en `CONTRATO`, y la que usa de verdad Mapa de Riesgos en `MOTORES.flujo.usa` de su `logic.js`; el test lo cruza si la app está al lado); y de `Dibujo`: `svg`, `drawio`, `leyenda`. Añadir funciones o campos nuevos sí se puede sin subir `MOTOR`.
+- **No quites ni cambies el significado** de estas funciones sin comprobar antes Mapa de Riesgos (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Mapa de Riesgos/Aplicación`, sus tests cargan este motor) y **subir `MOTOR`**: `TIPOS`, `nuevoActor`, `nuevoPaso`, `leerPegado`, `incorporarPasos`, `avisosPasos`, `errores`, `rolesSinCalle`, `propuestasPuntos`, `disponer`, `dibujar`, `MARCO_SUG`, `sanearFlujo`, `leerIntercambio`, `paqueteIntercambio`, `NIVELES_IPR`, `nivelDeIPR`, y desde el 2026-10-23 también `lleno`, `corto`, `normal`, `plural`, `listaY`, `sinTildes`, `ORDEN_TIPOS`, `ACTORES_SUG`, `nuevoFlujo`, `nuevoSubproceso`, `nuevaFlecha`, `nuevoPunto`, `siguienteNum`, `colorLibre`, `pasoDe`, `actorDe`, `buscaActor`, `sugerirObjetivo`, `avisosProceso`, `avisosActores`, `progreso`, `resumen`, `aceptarPropuesta`, `insertarDespues`, `quitarPaso`, `cambiarTipo`, `ponerSalida`, `anadirActores`, `nuevoControl` (la lista viva está en `CONTRATO`, y la que usa de verdad Mapa de Riesgos en `MOTORES.flujo.usa` de su `logic.js`; el test lo cruza si la app está al lado); y de `Dibujo`: `svg`, `drawio`, `leyenda`. Añadir funciones o campos nuevos sí se puede sin subir `MOTOR`.
 - El test «contrato» de `tests/logic.test.mjs` lo comprueba. Si falla, no se publica.
 - **Forma del objeto `dibujo`** (también contrato; el paso 9 de Mapa de Riesgos la lee y la toca después de `dibujar`): `iconos[].nums`, `.texto`, `.nivel`, `.critico`, `.pasoId`; `bandas[].color` y `.nombre` (los cambia para el «calor por subproceso» y `Dibujo.svg` debe respetarlos); `marco`; `nodos[].tipo` y `.pasoId`. Opciones de `Dibujo.svg`: `sel`, `numeros`, `cabecera`, `titulo`, `accesible`; de `Dibujo.drawio`: `titulo`, `numeros`, `id`. Clases del SVG: `fl-icono--<nivel>`, `fl-icono--critico` y `fl-nodo` con `data-paso`. No renombrar ninguno.
 - Iconos de punto crítico: un punto puede traer `nivel` (muyalto|alto|medio|bajo, cortes de IPR de AMFE ≥300/200/100) y `critico` (borde negro grueso). No se guardan (el saneado los quita): los pone quien dibuja (Mapa de Riesgos). Sin `nivel`, Flujograma lo saca del IPR más alto de los fallos del AMFE traído (`f.amfe`); sin nada, el aviso sale rojo como siempre.
@@ -55,7 +55,7 @@ Ejes abstractos: `v` = sentido del proceso (filas), `u` = ancho (calles). En ver
 
 ## 4. Entorno y pruebas
 - Node v26. `node tests/logic.test.mjs` (543 comprobaciones con el contrato de Mapa de Riesgos; las de «Traer de AMFE» usan el paquete real de `../../AMFE/Aplicación` si está al lado). Con `GUARDAR=<carpeta>` guarda un .docx y un .xlsx de prueba; se comprueban con `/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to pdf`.
-- Servir: `cd "/Users/Trabajo/Desktop/Flujograma/Aplicación" && python3 -m http.server 8769` (en segundo plano) y abrir la vista previa `app-flujograma` de `/Users/Trabajo/Desktop/Flujograma/.claude/launch.json`.
+- Servir: `cd "/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Flujograma/Aplicación" && python3 -m http.server 8769` (en segundo plano) y abrir la vista previa `app-flujograma` de `/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Flujograma/.claude/launch.json`.
 - Revisar en escritorio y en móvil (360 px: `document.documentElement.scrollWidth === 360`) y en modo oscuro. El dibujo se puede pasar a PNG para mirarlo con `qlmanage -t -s 1400 -o <carpeta> archivo.svg`.
 - Iconos: `icon-512.svg` → `qlmanage -t -s 512` y tamaños con `sips -z`.
 
@@ -64,12 +64,12 @@ Ejes abstractos: `v` = sentido del proceso (filas), `u` = ancho (calles). En ver
 
 ## 6. Copias de seguridad locales
 ```
-Desktop/Flujograma/
+Desktop/Calidad&Seguridad/Ecosistema Calidad/Flujograma/
 ├── Aplicación/   ← la app (este repositorio git, lo que se publica)
 ├── Backup/       ← 5 copias más recientes, fuera del repositorio
 └── Diseño/       ← DISEÑO_FLUJOGRAMA.md
 ```
-`bash ~/.claude/skills/app-copia_seguridad/scripts/copia_seguridad.sh --root "/Users/Trabajo/Desktop/Flujograma" --name Flujograma --exclude "Curso*" --exclude "Documentos*" --exclude "*.docx" --exclude .claude`. Hacer una antes de cada publicación.
+`bash ~/.claude/skills/app-copia_seguridad/scripts/copia_seguridad.sh --root "/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Flujograma" --name Flujograma --exclude "Curso*" --exclude "Documentos*" --exclude "*.docx" --exclude .claude`. Hacer una antes de cada publicación.
 
 ## 7. Publicación
 Publicada el 2026-10-22 (v2026.04) con permiso del autor: repositorio público `cjgaland/flujograma`, GitHub Pages desde `main` (raíz) → https://cjgaland.github.io/flujograma/. Cada nueva publicación (push) solo cuando el autor lo pida. Pasos por versión: copia de seguridad; `NOVEDADES` + `APP_VERSION`; mismos `?v=` en index.html; subir `CACHE_NAME` en sw.js; tests; commit en español terminado en `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; push.
