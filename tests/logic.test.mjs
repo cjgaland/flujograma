@@ -244,7 +244,8 @@ t("hoja en blanco: una calle por actor", (D.callesEnBlanco(["A", "B", "C"]).matc
 // Si falla: no quites ni cambies el significado de estas funciones sin comprobar Mapa de Riesgos y subir MOTOR.
 t("contrato: MOTOR = 1", L.MOTOR === 1);
 const CONTRATO_MAPA = ["TIPOS", "nuevoActor", "nuevoPaso", "leerPegado", "incorporarPasos", "avisosPasos", "errores", "rolesSinCalle", "propuestasPuntos",
-  "disponer", "dibujar", "MARCO_SUG", "sanearFlujo", "leerIntercambio", "paqueteIntercambio"];
+  "disponer", "dibujar", "MARCO_SUG", "sanearFlujo", "leerIntercambio", "paqueteIntercambio",
+  "lleno", "corto", "normal", "plural", "listaY", "sinTildes", "ORDEN_TIPOS", "ACTORES_SUG", "nuevoFlujo", "nuevoSubproceso", "nuevaFlecha", "nuevoPunto", "siguienteNum", "colorLibre", "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "avisosProceso", "avisosActores", "progreso", "resumen", "aceptarPropuesta", "insertarDespues", "quitarPaso", "cambiarTipo", "ponerSalida", "anadirActores"];
 CONTRATO_MAPA.forEach(k => t(`contrato: LogicaFlujo.${k}`, k in L && L[k] != null && L.CONTRATO.includes(k)));
 ["svg", "drawio", "leyenda"].forEach(k => t(`contrato: Dibujo.${k}`, typeof D[k] === "function"));
 t("contrato: TIPOS con los seis símbolos", ["terminal", "actividad", "decision", "datos", "documento", "externo"].every(k => L.TIPOS[k] && L.TIPOS[k].relleno));
@@ -268,6 +269,10 @@ t("sin nivel ni crítico: como siempre (rojo)", (() => { const s0 = D.svg(L.disp
 const fG = L.sanearFlujo(clon(CONST()), genId, "x"); fG.amfe = { id: "a", titulo: "", traido: "", fallos: [{ num: 4, subproceso: "", fallo: "x", ipr: 343, prioritario: true }] }; fG.puntos[0].fallos = ["4"];
 t("icono: nivel sacado del IPR del AMFE traído", L.disponer(fG).iconos.find(ic => ic.pasoId === fG.puntos[0].pasoId).nivel === "muyalto");
 t("el saneado no guarda nivel ni crítico (los calcula quien dibuja)", (() => { const z = L.sanearFlujo(clon(fN), genId, "x"); return z.puntos.every(x => !("nivel" in x) && !("critico" in x)); })());
+
+// La lista que de verdad usa Mapa de Riesgos (MOTORES.flujo.usa), si su app está al lado
+let LM = null; try { LM = require("../../../Mapa de Riesgos/Aplicación/logic.js"); } catch (e) { /* Mapa de Riesgos no está al lado */ }
+if (LM && LM.MOTORES && LM.MOTORES.flujo) t("contrato: cubre todo lo que usa Mapa de Riesgos", LM.MOTORES.flujo.usa.every(k => L.CONTRATO.includes(k) && k in L));
 
 // ---------- Saneado ----------
 const sucio = { flujos: [{ id: "a", pasos: [{ id: "p1", num: 1, tipo: "raro", siguientes: [{ a: "p1" }, { a: "noexiste" }, { a: "p2", etiqueta: "si" }], actorId: "fantasma" }, { id: "p2", num: 1, tipo: "decision" }, { id: "p1", num: 3 }], vista: { subprocesos: false } }, "basura"] };

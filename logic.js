@@ -15,7 +15,9 @@
   // Subirla solo si se quita o cambia el significado de una función de CONTRATO (ver CLAUDE.md).
   const MOTOR = 1;
   const CONTRATO = ["TIPOS", "nuevoActor", "nuevoPaso", "leerPegado", "incorporarPasos", "avisosPasos", "errores", "rolesSinCalle", "propuestasPuntos",
-    "disponer", "dibujar", "MARCO_SUG", "sanearFlujo", "leerIntercambio", "paqueteIntercambio", "NIVELES_IPR", "nivelDeIPR"];
+    "disponer", "dibujar", "MARCO_SUG", "sanearFlujo", "leerIntercambio", "paqueteIntercambio", "NIVELES_IPR", "nivelDeIPR",
+    // Ampliado el 2026-10-23 a petición de Mapa de Riesgos (entrega 1: sus pasos 3 y 4 usan estas también)
+    "lleno", "corto", "normal", "plural", "listaY", "sinTildes", "ORDEN_TIPOS", "ACTORES_SUG", "nuevoFlujo", "nuevoSubproceso", "nuevaFlecha", "nuevoPunto", "siguienteNum", "colorLibre", "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "avisosProceso", "avisosActores", "progreso", "resumen", "aceptarPropuesta", "insertarDespues", "quitarPaso", "cambiarTipo", "ponerSalida", "anadirActores"];
   const URL_AMFE = "https://cjgaland.github.io/amfe/";
   const URL_AUD = "https://cjgaland.github.io/auditorias/";
   const URL_IND = "https://cjgaland.github.io/indicadores-calidad/";
