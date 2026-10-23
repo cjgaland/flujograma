@@ -15,8 +15,10 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.06";
+  const APP_VERSION = "2026.07";
   const NOVEDADES = [
+    { version: "2026.07", fecha: "Octubre 2026", titulo: "Nueva app hermana: Mapa de Riesgos", cambios: [
+      "Enlace a la nueva app hermana Mapa de Riesgos en la portada y en «Acerca de»: pone los riesgos del AMFE encima de tu flujograma, coloreados por su IPR, y prepara el documento final."] },
     { version: "2026.06", fecha: "Octubre 2026", titulo: "Avisos coloreados por IPR y preparación para Mapa de Riesgos", cambios: [
       "Si has traído el AMFE (paso 1), el aviso de cada punto crítico toma el color del IPR más alto de sus fallos: rojo muy alto, naranja alto, amarillo medio y verde bajo, como en el AMFE. Sale en el dibujo, en la imagen, en el PDF, en Word y en draw.io.",
       "Por dentro: la futura app Mapa de Riesgos podrá usar el motor y el dibujo de Flujograma tal cual, sin copiarlos."] },
@@ -213,6 +215,7 @@
         <a class="guide-card guide-card--hermana" href="${L.URL_IND}" target="_blank" rel="noopener"><span class="guide-num">%</span><div><div class="guide-q">Indicadores ↗</div><div class="guide-a">App hermana: <b>diseña los indicadores</b> con los que medir los puntos críticos de tu proceso.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_TM}" target="_blank" rel="noopener"><span class="guide-num">n</span><div><div class="guide-q">Tamaño Muestral ↗</div><div class="guide-a">App hermana: <b>cuántos casos revisar</b> para medir esos indicadores.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_DAFO}" target="_blank" rel="noopener"><span class="guide-num">D</span><div><div class="guide-q">DAFO · CAME ↗</div><div class="guide-a">App hermana: <b>analiza tu unidad</b> con un DAFO para decidir qué proceso conviene dibujar y mejorar.</div></div><span class="guide-go">›</span></a>
+        <a class="guide-card guide-card--hermana" href="${L.URL_MAPA}" target="_blank" rel="noopener"><span class="guide-num">◆</span><div><div class="guide-q">Mapa de Riesgos ↗</div><div class="guide-a">App hermana: <b>elabora el mapa de riesgos</b> del proceso: pone los riesgos del AMFE encima de este flujograma, coloreados por su IPR.</div></div><span class="guide-go">›</span></a>
       </div>
       ${practica("<b>Protección de datos:</b> un flujograma describe un proceso, no a pacientes concretos. No escribas nombres de pacientes ni números de historia clínica, ni nombres de profesionales: usa perfiles («Enfermería», «Celador»).")}`;
   }
