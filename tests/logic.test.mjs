@@ -270,6 +270,25 @@ const fG = L.sanearFlujo(clon(CONST()), genId, "x"); fG.amfe = { id: "a", titulo
 t("icono: nivel sacado del IPR del AMFE traído", L.disponer(fG).iconos.find(ic => ic.pasoId === fG.puntos[0].pasoId).nivel === "muyalto");
 t("el saneado no guarda nivel ni crítico (los calcula quien dibuja)", (() => { const z = L.sanearFlujo(clon(fN), genId, "x"); return z.puntos.every(x => !("nivel" in x) && !("critico" in x)); })());
 
+// Forma del objeto «dibujo» y opciones de Dibujo que usa el paso 9 de Mapa de Riesgos (no quitar ni renombrar)
+(() => {
+  const fM = L.sanearFlujo(clon(C.EJEMPLOS.flujos.find(x => x.id === "ej-fl-urgencias")), genId, "x");
+  // Puntos «virtuales» como los que pasa Mapa de Riesgos: fallos, nivel y crítico, sin guardarlos
+  fM.puntos = fM.puntos.map((x, i) => Object.assign({}, x, { fallos: [String(i + 1)], nivel: ["muyalto", "alto", "medio", "bajo"][i % 4], critico: i === 0 }));
+  const d = L.dibujar(fM);
+  t("contrato dibujo: iconos con nums, texto, nivel, critico y pasoId", d.iconos.length && d.iconos.every(ic => Array.isArray(ic.nums) && typeof ic.texto === "string" && "nivel" in ic && typeof ic.critico === "boolean" && L.pasoDe(fM, ic.pasoId)));
+  t("contrato dibujo: bandas con color y nombre", d.bandas.length === 7 && d.bandas.every(b => typeof b.color === "string" && typeof b.nombre === "string"));
+  t("contrato dibujo: marco y nodos con tipo y pasoId", d.marco && d.marco.estrategicos && d.marco.soporte && d.marco.clave && d.nodos.every(n => L.TIPOS[n.tipo] && n.pasoId));
+  d.bandas[0].color = "#123456"; d.bandas[0].nombre = "Banda cambiada";
+  const sv = D.svg(d, { sel: d.nodos[0].pasoId, numeros: true, cabecera: "Mapa de riesgo", titulo: "Mapa", accesible: true });
+  t("contrato Dibujo.svg: respeta el color y el nombre cambiados de una banda", sv.includes("#123456") && sv.includes("Banda cambiada"));
+  t("contrato Dibujo.svg: clases fl-icono--<nivel> y fl-nodo con data-paso", ["muyalto", "alto", "medio", "bajo"].every(k => sv.includes("fl-icono--" + k)) && sv.includes("fl-icono--critico") && /class="fl-nodo" data-paso="[^"]+"/.test(sv));
+  t("contrato Dibujo.svg: opciones sel, cabecera, titulo y accesible", sv.includes(">Mapa de riesgo<") && sv.includes('aria-label="Mapa"') && sv.includes('role="button"') && sv.includes("#4f46e5"));
+  const dx = D.drawio(d, { titulo: "Mapa", numeros: false, id: "mapa-1" });
+  t("contrato Dibujo.drawio: opciones titulo, numeros e id", dx.includes('id="mapa-1"') && dx.includes('id="titulo"') && !dx.includes('id="num-'));
+  t("contrato Dibujo.leyenda: dibuja los tipos pedidos", (D.leyenda([["terminal", "Inicio"], ["decision", "Decisión"]]).match(/<text/g) || []).length === 2);
+})();
+
 // La lista que de verdad usa Mapa de Riesgos (MOTORES.flujo.usa), si su app está al lado
 let LM = null; try { LM = require("../../../Mapa de Riesgos/Aplicación/logic.js"); } catch (e) { /* Mapa de Riesgos no está al lado */ }
 if (LM && LM.MOTORES && LM.MOTORES.flujo) t("contrato: cubre todo lo que usa Mapa de Riesgos", LM.MOTORES.flujo.usa.every(k => L.CONTRATO.includes(k) && k in L));
