@@ -26,6 +26,7 @@
   const URL_TM = "https://cjgaland.github.io/tamano-muestral/";
   const URL_DAFO = "https://cjgaland.github.io/dafo/";
   const URL_MAPA = "https://cjgaland.github.io/mapa-riesgos/";
+  const URL_RONDAS = "https://cjgaland.github.io/rondas-seguridad/";
 
   // ---------- Utilidades ----------
   const lleno = v => v != null && String(v).trim() !== "";
@@ -1106,7 +1107,7 @@
   }
 
   const API = {
-    VERSION_DATOS, MOTOR, CONTRATO, NIVELES_IPR, nivelDeIPR, URL_AMFE, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_MAPA,
+    VERSION_DATOS, MOTOR, CONTRATO, NIVELES_IPR, nivelDeIPR, URL_AMFE, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_MAPA, URL_RONDAS,
     lleno, sinTildes, num, corto, normal, plural, listaY, mayuscula, minuscula,
     PASOS, TIPOS, ORDEN_TIPOS, COLORES_SUB, COLOR_SUB_HEX, ACTORES_SUG,
     nuevoFlujo, nuevaVista, nuevoActor, nuevoSubproceso, nuevoPaso, nuevaFlecha, nuevoPunto, nuevoControl, siguienteNum, colorLibre,
