@@ -83,4 +83,4 @@ Publicada el 2026-10-22 (v2026.04) con permiso del autor: repositorio público `
 - Publicada (2026-10-22, v2026.04) en https://cjgaland.github.io/flujograma/. Última publicación: v2026.06 (2026-10-23), con el motor para Mapa de Riesgos.
 - Enlazada desde todas las apps hermanas publicadas (2026-10-22). Pendiente: programar «Traer de Flujograma» en AMFE y en Mapa de Riesgos (sesiones de esos proyectos); manual de usuario si lo pide.
 - Sin probar: el PDF en iPhone real (la vista previa oculta no ejecuta `requestAnimationFrame`).
-- **v2026.08 (2026-10-24)**: enlace a la nueva app hermana Rondas de Seguridad (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Auditorías/Rondas de Seguridad/Aplicación/`, https://cjgaland.github.io/rondas-seguridad/) en la portada y en «Acerca de». Sin publicar.
+- **v2026.08 (2026-10-24)**: enlace a la nueva app hermana Rondas de Seguridad (`/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Auditorías/Rondas de Seguridad/Aplicación/`, https://cjgaland.github.io/rondas-seguridad/) en la portada y en «Acerca de». Publicada el 2026-10-25.
