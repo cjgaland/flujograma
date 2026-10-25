@@ -15,8 +15,10 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.11";
+  const APP_VERSION = "2026.12";
   const NOVEDADES = [
+    { version: "2026.12", fecha: "Octubre 2026", titulo: "Nueva app hermana: Lectura Crítica", cambios: [
+      "Enlace a la nueva app hermana Lectura Crítica en la portada y en «Acerca de»: lee críticamente un artículo paso a paso (plantillas de CASPe con preguntas propias, calculadoras y un veredicto con semáforo) antes de cambiar la práctica."] },
     { version: "2026.11", fecha: "Octubre 2026", titulo: "Nueva herramienta de apoyo: Legibilidad", cambios: [
       "En «Acerca de», el grupo «Herramientas de apoyo» suma Legibilidad: mide con el índice de Flesch-Szigriszt y la escala INFLESZ si un texto para pacientes se entiende y te dice qué cambiar."] },
     { version: "2026.10", fecha: "Octubre 2026", titulo: "La copia sin conexión de las otras apps ya no se borra", cambios: [
@@ -226,6 +228,7 @@
         <a class="guide-card guide-card--hermana" href="${L.URL_DAFO}" target="_blank" rel="noopener"><span class="guide-num">D</span><div><div class="guide-q">DAFO · CAME ↗</div><div class="guide-a">App hermana: <b>analiza tu unidad</b> con un DAFO para decidir qué proceso conviene dibujar y mejorar.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_MAPA}" target="_blank" rel="noopener"><span class="guide-num">◆</span><div><div class="guide-q">Mapa de Riesgos ↗</div><div class="guide-a">App hermana: <b>elabora el mapa de riesgos</b> del proceso: pone los riesgos del AMFE encima de este flujograma, coloreados por su IPR.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_RONDAS}" target="_blank" rel="noopener"><span class="guide-num">✓</span><div><div class="guide-q">Rondas de Seguridad ↗</div><div class="guide-a">App hermana: <b>rondas de seguridad</b> en una unidad: comprueba a pie de cama lo que debería pasar en cada paso.</div></div><span class="guide-go">›</span></a>
+        <a class="guide-card guide-card--hermana" href="${L.URL_LC}" target="_blank" rel="noopener"><span class="guide-num">LC</span><div><div class="guide-q">Lectura Crítica ↗</div><div class="guide-a">App hermana: <b>lee críticamente un artículo</b> para comprobar la evidencia que respalda un cambio en el proceso.</div></div><span class="guide-go">›</span></a>
       </div>
       ${practica("<b>Protección de datos:</b> un flujograma describe un proceso, no a pacientes concretos. No escribas nombres de pacientes ni números de historia clínica, ni nombres de profesionales: usa perfiles («Enfermería», «Celador»).")}`;
   }
