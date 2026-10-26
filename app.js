@@ -17,6 +17,7 @@
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
   const APP_VERSION = "2026.12";
   const NOVEDADES = [
+    // [eco]
     { version: "2026.12", fecha: "Octubre 2026", titulo: "Nueva app hermana: Lectura Crítica", cambios: [
       "Enlace a la nueva app hermana Lectura Crítica en la portada y en «Acerca de»: lee críticamente un artículo paso a paso (plantillas de CASPe con preguntas propias, calculadoras y un veredicto con semáforo) antes de cambiar la práctica."] },
     { version: "2026.11", fecha: "Octubre 2026", titulo: "Nueva herramienta de apoyo: Legibilidad", cambios: [
@@ -35,6 +36,11 @@
       "Por dentro: la futura app Mapa de Riesgos podrá usar el motor y el dibujo de Flujograma tal cual, sin copiarlos."] },
     { version: "2026.05", fecha: "Octubre 2026", titulo: "Nueva app hermana: DAFO · CAME", cambios: [
       "Enlace a la nueva app hermana DAFO · CAME (análisis DAFO de una unidad, estrategias CAME y plan de acción) en la portada y en «Acerca de». La portada enlaza también a Indicadores y a Tamaño Muestral."] },
+    // [/eco]
+    /* [ind]
+    { version: "2026.06", fecha: "Octubre 2026", titulo: "Avisos coloreados por IPR", cambios: [
+      "Si has traído el AMFE (paso 1), el aviso de cada punto crítico toma el color del IPR más alto de sus fallos: rojo muy alto, naranja alto, amarillo medio y verde bajo, como en el AMFE. Sale en el dibujo, en la imagen, en el PDF, en Word y en draw.io."] },
+    [/ind] */
     { version: "2026.04", fecha: "Octubre 2026", titulo: "Ponte a prueba, recorrido, modo reunión y ediciones", cambios: [
       "«Ponte a prueba»: las preguntas del test del curso sobre procesos y flujogramas y otras sobre cómo hacerlos, con su explicación.",
       "Cuatro ejercicios: ¿qué símbolo es?, ordena los pasos, encuentra el error en un flujograma mal hecho y señala los puntos críticos comparando con el ejemplo.",
@@ -46,7 +52,12 @@
     { version: "2026.03", fecha: "Octubre 2026", titulo: "Word, Excel, «Traer de AMFE» y el ejemplo de Urgencias", cambios: [
       "Documento del proceso en Word editable: control del documento, descripción, actores, subprocesos, el flujograma como imagen, la leyenda de símbolos, la tabla de pasos y los puntos críticos.",
       "Libro de Excel con los pasos, los puntos críticos (sus columnas se pueden pegar tal cual en el paso 4 de AMFE), los subprocesos y los actores.",
+      // [eco]
       "«Traer de AMFE» en el paso 1: trae el proceso, los subprocesos y sus roles como calles, y si quieres un borrador de los pasos y un punto crítico por cada fallo prioritario. Funciona en el mismo navegador o con la copia de seguridad de AMFE.",
+      // [/eco]
+      /* [ind]
+      "«Cargar archivo de AMFE» en el paso 1: con la copia de seguridad (.json) de la app AMFE, trae el proceso, los subprocesos y sus roles como calles, y si quieres un borrador de los pasos y un punto crítico por cada fallo prioritario.",
+      [/ind] */
       "Al escribir los números de fallo del AMFE en un punto crítico, la app dice qué fallo es cada uno.",
       "Marco del mapa de procesos, como en el Documento Final: procesos estratégicos arriba, proceso clave a la izquierda y procesos de soporte abajo. Sale en el dibujo, en la imagen, en el PDF, en Word y en draw.io.",
       "Control del documento (elaborado, revisado, aprobado e histórico de revisiones) en el paso 6.",
@@ -59,7 +70,7 @@
       "Retoques ligeros del dibujo: bajar un paso una fila o ponerlo al lado de otro.",
       "Calles por turnos, como en las soluciones del curso: una calle nueva cada vez que el proceso vuelve a un profesional.",
       "Nuevos ejemplos del curso: alta hospitalaria, preparación de quirófano y solicitud de analítica urgente. Todos con puntos críticos.",
-      "Las apps AMFE y Mapa de Riesgos podrán traer este flujograma en el mismo navegador (próximamente en ellas)."] },
+      /*[eco]*/"Las apps AMFE y Mapa de Riesgos podrán traer este flujograma en el mismo navegador (próximamente en ellas)."/*[/eco]*/] },
     { version: "2026.01", fecha: "Octubre 2026", titulo: "Primera versión: escribe los pasos y la app dibuja", cambios: [
       "Asistente en 6 pasos con «Tu siguiente paso» en la portada. En esta versión están disponibles los pasos 1 a 4.",
       "El proceso (dónde empieza y dónde acaba, con objetivo propuesto), los actores (cada uno, una calle del dibujo) y los subprocesos.",
@@ -221,6 +232,7 @@
         <a class="guide-card" href="#/aprende"><span class="guide-num">?</span><div><div class="guide-q">Aprende</div><div class="guide-a">${C.TEMAS.length} temas <b>explicados fácil</b>: del mapa de procesos a las decisiones bien hechas.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card" href="#/prueba"><span class="guide-num">✓</span><div><div class="guide-q">Ponte a prueba</div><div class="guide-a">${C.TEST.length} preguntas con su <b>explicación</b> y cuatro ejercicios: símbolos, ordenar, encontrar el error y puntos críticos.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card" href="#/glosario"><span class="guide-num">A–Z</span><div><div class="guide-q">Glosario</div><div class="guide-a">${C.GLOSARIO.length} términos <b>en lenguaje llano</b>, con buscador.</div></div><span class="guide-go">›</span></a>
+        <!-- [eco] -->
         <a class="guide-card guide-card--hermana" href="${L.URL_AMFE}" target="_blank" rel="noopener"><span class="guide-num">!</span><div><div class="guide-q">AMFE ↗</div><div class="guide-a">App hermana: analiza <b>qué puede fallar</b> en cada paso del proceso, qué pasaría y por qué.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_AUD}" target="_blank" rel="noopener"><span class="guide-num">✓</span><div><div class="guide-q">Auditorías ↗</div><div class="guide-a">App hermana: <b>comprueba con una auditoría</b> si el proceso se hace como se ha dibujado.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_IND}" target="_blank" rel="noopener"><span class="guide-num">%</span><div><div class="guide-q">Indicadores ↗</div><div class="guide-a">App hermana: <b>diseña los indicadores</b> con los que medir los puntos críticos de tu proceso.</div></div><span class="guide-go">›</span></a>
@@ -229,6 +241,7 @@
         <a class="guide-card guide-card--hermana" href="${L.URL_MAPA}" target="_blank" rel="noopener"><span class="guide-num">◆</span><div><div class="guide-q">Mapa de Riesgos ↗</div><div class="guide-a">App hermana: <b>elabora el mapa de riesgos</b> del proceso: pone los riesgos del AMFE encima de este flujograma, coloreados por su IPR.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_RONDAS}" target="_blank" rel="noopener"><span class="guide-num">✓</span><div><div class="guide-q">Rondas de Seguridad ↗</div><div class="guide-a">App hermana: <b>rondas de seguridad</b> en una unidad: comprueba a pie de cama lo que debería pasar en cada paso.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_LC}" target="_blank" rel="noopener"><span class="guide-num">LC</span><div><div class="guide-q">Lectura Crítica ↗</div><div class="guide-a">App hermana: <b>lee críticamente un artículo</b> para comprobar la evidencia que respalda un cambio en el proceso.</div></div><span class="guide-go">›</span></a>
+        <!-- [/eco] -->
       </div>
       ${practica("<b>Protección de datos:</b> un flujograma describe un proceso, no a pacientes concretos. No escribas nombres de pacientes ni números de historia clínica, ni nombres de profesionales: usa perfiles («Enfermería», «Celador»).")}`;
   }
@@ -699,7 +712,12 @@
       <h2 class="sec-t">Ediciones</h2>
       ${edicionesHtml(f)}
       <h2 class="sec-t">Para otras apps</h2>
+      <!-- [eco] -->
       ${practica("Las apps <b>AMFE</b> y <b>Mapa de Riesgos</b> podrán traer este flujograma (sus subprocesos, sus pasos y sus puntos críticos) con un botón «Traer de Flujograma», si las usas en este mismo navegador. Desde otro dispositivo, con la copia de seguridad.")}
+      <!-- [/eco] -->
+      <!-- [ind]
+      ${practica("Tu copia de seguridad (.json) lleva este flujograma (sus subprocesos, sus pasos y sus puntos críticos) en un formato que otras herramientas pueden importar.")}
+      [/ind] -->
       <div class="toolbar no-print"><button class="btn" data-act="copia">⬇ Copia de seguridad</button></div>`;
   }
 
@@ -1479,9 +1497,14 @@
     else if (act === "v-marco" && f) { f.vista.marco = !f.vista.marco; if (f.vista.marco && !f.marco.estrategicos.length && !f.marco.soporte.length) f.marco = clon(L.MARCO_SUG); tocado(f); repintar(); }
     else if (act === "marco-sug" && f) { f.marco = clon(L.MARCO_SUG); tocado(f); repintar(); }
     else if (act === "amfe-buscar" && f) {
+      // [eco]
       let l = null; try { l = L.leerAmfe(JSON.parse(leer("amfe-intercambio") || "null")); } catch (er) { /* */ }
       if (l && l.length) { amfesLeidos = l; amfeElegido = l[0].id; repintar(); }
       else confirmar("<p>No hay ningún AMFE de la app <b>AMFE</b> en este navegador.</p><p>Si lo tienes en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-amfe").click(), { titulo: "Traer de AMFE", peligro: false });
+      // [/eco]
+      /* [ind]
+      $("#input-amfe").click();
+      [/ind] */
     }
     else if (act === "amfe-cancelar") { amfesLeidos = null; repintar(); }
     else if (act === "amfe-traer" && f && amfesLeidos) {

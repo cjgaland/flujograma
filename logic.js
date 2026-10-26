@@ -20,6 +20,7 @@
     "lleno", "corto", "normal", "plural", "listaY", "sinTildes", "ORDEN_TIPOS", "ACTORES_SUG", "nuevoFlujo", "nuevoSubproceso", "nuevaFlecha", "nuevoPunto", "siguienteNum", "colorLibre", "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "avisosProceso", "avisosActores", "progreso", "resumen", "aceptarPropuesta", "insertarDespues", "quitarPaso", "cambiarTipo", "ponerSalida", "anadirActores",
     // Entrega 4 de Mapa de Riesgos: crea el control documental de cada mapa (y añade `ubicacion` a cada persona por su cuenta)
     "nuevoControl"];
+  // [eco]
   const URL_AMFE = "https://cjgaland.github.io/amfe/";
   const URL_AUD = "https://cjgaland.github.io/auditorias/";
   const URL_IND = "https://cjgaland.github.io/indicadores-calidad/";
@@ -28,6 +29,7 @@
   const URL_MAPA = "https://cjgaland.github.io/mapa-riesgos/";
   const URL_RONDAS = "https://cjgaland.github.io/rondas-seguridad/";
   const URL_LC = "https://cjgaland.github.io/lectura-critica/";
+  // [/eco]
 
   // ---------- Utilidades ----------
   const lleno = v => v != null && String(v).trim() !== "";
@@ -1108,7 +1110,10 @@
   }
 
   const API = {
-    VERSION_DATOS, MOTOR, CONTRATO, NIVELES_IPR, nivelDeIPR, URL_AMFE, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_MAPA, URL_RONDAS, URL_LC,
+    VERSION_DATOS, MOTOR, CONTRATO, NIVELES_IPR, nivelDeIPR,
+    // [eco]
+    URL_AMFE, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_MAPA, URL_RONDAS, URL_LC,
+    // [/eco]
     lleno, sinTildes, num, corto, normal, plural, listaY, mayuscula, minuscula,
     PASOS, TIPOS, ORDEN_TIPOS, COLORES_SUB, COLOR_SUB_HEX, ACTORES_SUG,
     nuevoFlujo, nuevaVista, nuevoActor, nuevoSubproceso, nuevoPaso, nuevaFlecha, nuevoPunto, nuevoControl, siguienteNum, colorLibre,
