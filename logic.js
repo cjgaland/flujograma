@@ -29,6 +29,7 @@
   const URL_MAPA = "https://cjgaland.github.io/mapa-riesgos/";
   const URL_RONDAS = "https://cjgaland.github.io/rondas-seguridad/";
   const URL_LC = "https://cjgaland.github.io/lectura-critica/";
+  const URL_ACR = "https://cjgaland.github.io/acr-ishikawa/";
   // [/eco]
 
   // ---------- Utilidades ----------
@@ -1112,7 +1113,7 @@
   const API = {
     VERSION_DATOS, MOTOR, CONTRATO, NIVELES_IPR, nivelDeIPR,
     // [eco]
-    URL_AMFE, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_MAPA, URL_RONDAS, URL_LC,
+    URL_AMFE, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_MAPA, URL_RONDAS, URL_LC, URL_ACR,
     // [/eco]
     lleno, sinTildes, num, corto, normal, plural, listaY, mayuscula, minuscula,
     PASOS, TIPOS, ORDEN_TIPOS, COLORES_SUB, COLOR_SUB_HEX, ACTORES_SUG,
